@@ -1,0 +1,839 @@
+<?php
+
+class ProjectModel extends CI_Model
+{
+
+    public function get_all_projects($is_client = false)
+    {
+        $designation_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id;
+        $user_id = $this->session->userdata('user_id');
+
+        if (in_array($designation_id, [5])) {
+            $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->group_start()
+                                    ->where(['assign_by' => $this->session->userdata('user_id')])
+                                    ->or_where(['asign_user' => $this->session->userdata('user_id')])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+        }if (in_array($designation_id, [7])) {
+            $company_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->company_id;
+
+            $users = $this->db->get_where('user', ['company_id' => $company_id])->result();
+
+            $user_ids = array_column($users, 'id');
+
+            $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->group_start()
+                                    ->where_in('assign_by', $user_ids)
+                                    ->or_where_in('asign_user', $user_ids)
+                                    // ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+        } else {
+            if(in_array($designation_id, [9])){
+                $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->group_start()
+                                    ->where(['assign_by' => $this->session->userdata('user_id')])
+                                    ->or_where(['asign_user' => $this->session->userdata('user_id')])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+            } else{
+                $result = $this->db->order_by('created_at', 'desc')->join('project_details', 'project.project_id = project_details.project_id')->get('project')->result();
+            }
+        }
+        // return $this->db->last_query();
+
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+        // echo $this->db->last_query();
+    }
+
+
+    public function get_complete_projects($is_client = false)
+    {
+        $designation_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id;
+        $user_id = $this->session->userdata('user_id');
+
+        if (in_array($designation_id, [5])) {
+            $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'completed')
+                                ->group_start()
+                                    ->where(['assign_by' => $this->session->userdata('user_id')])
+                                    ->or_where(['asign_user' => $this->session->userdata('user_id')])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+        } if (in_array($designation_id, [7])) {
+            $company_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->company_id;
+
+            $users = $this->db->get_where('user', ['company_id' => $company_id])->result();
+
+            $user_ids = array_column($users, 'id');
+
+            $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'completed')
+                                ->group_start()
+                                    ->where_in('assign_by', $user_ids)
+                                    ->or_where_in('asign_user', $user_ids)
+                                    // ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+        } else {
+            if(in_array($designation_id, [9])){
+                $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'completed')
+                                ->group_start()
+                                    ->where(['assign_by' => $this->session->userdata('user_id')])
+                                    ->or_where(['asign_user' => $this->session->userdata('user_id')])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+            } else{
+                $result = $this->db->order_by('created_at', 'desc')->where('type', 'completed')->join('project_details', 'project.project_id = project_details.project_id')->get('project')->result();
+            }
+        }
+
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+        // echo $this->db->last_query();
+    }
+
+    public function get_live_projects($is_client = false)
+    {
+        $designation_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id;
+        $user_id = $this->session->userdata('user_id');
+
+        if (in_array($designation_id, [5])) {
+            $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'live')
+                                ->group_start()
+                                    ->where(['assign_by' => $this->session->userdata('user_id')])
+                                    ->or_where(['asign_user' => $this->session->userdata('user_id')])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+        } if (in_array($designation_id, [7])) {
+            $company_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->company_id;
+
+            $users = $this->db->get_where('user', ['company_id' => $company_id])->result();
+
+            $user_ids = array_column($users, 'id');
+
+            $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'live')
+                                ->group_start()
+                                    ->where_in('assign_by', $user_ids)
+                                    ->or_where_in('asign_user', $user_ids)
+                                    // ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+        } else {
+            if(in_array($designation_id, [9])){
+                $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'live')
+                                ->group_start()
+                                    ->where(['assign_by' => $this->session->userdata('user_id')])
+                                    ->or_where(['asign_user' => $this->session->userdata('user_id')])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+            } else{
+                $result = $this->db->order_by('created_at', 'desc')->where('type', 'live')->join('project_details', 'project.project_id = project_details.project_id')->get('project')->result();
+            }
+        }
+
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+        // echo $this->db->last_query();
+    }
+
+    public function get_cancelled_projects($is_client = false)
+    {
+        $designation_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id;
+        $user_id = $this->session->userdata('user_id');
+
+        if (in_array($designation_id, [5])) {
+            $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'cancelled')
+                                ->group_start()
+                                    ->where(['assign_by' => $this->session->userdata('user_id')])
+                                    ->or_where(['asign_user' => $this->session->userdata('user_id')])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+        } if (in_array($designation_id, [7])) {
+            $company_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->company_id;
+
+            $users = $this->db->get_where('user', ['company_id' => $company_id])->result();
+
+            $user_ids = array_column($users, 'id');
+
+            $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'cancelled')
+                                ->group_start()
+                                    ->where_in('assign_by', $user_ids)
+                                    ->or_where_in('asign_user', $user_ids)
+                                    // ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+        } else {
+            if(in_array($designation_id, [9])){
+                $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'cancelled')
+                                ->group_start()
+                                    ->where(['assign_by' => $this->session->userdata('user_id')])
+                                    ->or_where(['asign_user' => $this->session->userdata('user_id')])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+            } else{
+                $result = $this->db->order_by('created_at', 'desc')->where('type', 'cancelled')->join('project_details', 'project.project_id = project_details.project_id')->get('project')->result();
+            }
+        }
+
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+        // echo $this->db->last_query();
+    }
+
+    public function get_all_proposal_projects($is_client = false)
+    {
+        $designation_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id;
+        $user_id = $this->session->userdata('user_id');
+
+        if (in_array($designation_id, [5])) {
+            $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'proposal')
+                                ->group_start()
+                                    ->where(['assign_by' => $this->session->userdata('user_id')])
+                                    ->or_where(['asign_user' => $this->session->userdata('user_id')])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+        } if (in_array($designation_id, [7])) {
+            $company_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->company_id;
+
+            $users = $this->db->get_where('user', ['company_id' => $company_id])->result();
+
+            $user_ids = array_column($users, 'id');
+
+            $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'proposal')
+                                ->group_start()
+                                    ->where_in('assign_by', $user_ids)
+                                    ->or_where_in('asign_user', $user_ids)
+                                    // ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+        } else {
+            if(in_array($designation_id, [9])){
+                $result = $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->where('type', 'proposal')
+                                ->group_start()
+                                    ->where(['assign_by' => $this->session->userdata('user_id')])
+                                    ->or_where(['asign_user' => $this->session->userdata('user_id')])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+            } else{
+                $result = $this->db->order_by('created_at', 'desc')->where('type', 'proposal')->join('project_details', 'project.project_id = project_details.project_id')->get('project')->result();
+            }
+        }
+
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+        // echo $this->db->last_query();
+    }
+
+    public function get_assignee()
+    {
+        $result = $this->db->join('designation', 'designation.designation_id = user.designation_id')->where_not_in('user.designation_id',[7, 5])->where(['is_deleted' => 0, 'permission' => 1])->order_by('name', 'ASC')->get('user')->result();
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+    }
+
+    public function get_employee()
+    {
+        $result = $this->db->join('designation', 'designation.designation_id = user.designation_id')->where_in('user.designation_id',[1,6,8,9,10])->get('user')->result();
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+    }
+
+    public function get_manager()
+    {
+        $result = $this->db->join('designation', 'designation.designation_id = user.designation_id')->where(['user.designation_id' => 6])->get('user')->result();
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+    }
+
+    public function get_client()
+    {
+        $result = $this->db->join('designation', 'designation.designation_id = user.designation_id')->where_in('user.designation_id', [7, 5])->where(['is_deleted' => 0, 'permission' => 1])->get('user')->result();
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+    }
+
+    public function get_meta_fileds($section, $id)
+    {
+        $result = $this->db->get_where('meta_fields', ['section' => $section, 'meta_fields_id' => $id])->row();
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+    }
+
+    public function insert_project($data)
+    {
+        $result = $this->db->insert('project', $data);
+        if (!isset($result)) {
+            return false;
+        }
+        return $this->db->insert_id();
+    }
+
+    public function insert_project_details($data)
+    {
+        $result = $this->db->insert('project_details', $data);
+        if (!isset($result)) {
+            return false;
+        }
+        return true;
+    }
+
+    public function insert_project_specification($data)
+    {
+        $result = $this->db->insert('project_specification', $data);
+        if (!isset($result)) {
+            return false;
+        }
+        return true;
+    }
+    
+    public function insert_project_gem_spec($data)
+    {
+        $result = $this->db->insert('project_gem_spec', $data);
+        if (!isset($result)) {
+            return false;
+        }
+        return true;
+    }
+
+    public function get_project($id)
+    {
+        return $this->db->get_where('project', ['project_id' => $id])->row();
+    }
+
+    public function get_project_details($id)
+    {
+        return $this->db->get_where('project_details', ['project_id' => $id])->row();
+    }
+
+    public function get_project_specification($id)
+    {
+        return $this->db->get_where('project_specification', ['project_id' => $id])->row();
+    }
+
+    public function get_project_files($id)
+    {
+        return $this->db->order_by('created_at', 'desc')->get_where('project_files', ['project_id' => $id, 'is_archive' => 0])->result();
+    }
+
+    public function get_project_archive_files($id)
+    {
+        return $this->db->order_by('created_at', 'desc')
+                        ->where(['project_id' => $id, 'is_archive' => 1])
+                        ->group_start()
+                            ->where(['group_id' => NULL])
+                            ->or_where(['group_id' => ''])
+                        ->group_end()
+                        ->get('project_files')->result();
+    }
+
+    public function get_project_archive_files_by_group($id, $group)
+    {
+        return $this->db->order_by('created_at', 'desc')
+                        ->where(['project_id' => $id, 'is_archive' => 1])
+                        ->group_start()
+                            ->where("FIND_IN_SET('$group', `group_id`)")
+                        ->group_end()
+                        ->get('project_files')->result();
+    }
+
+    public function get_disposition()
+    {
+        $result = $this->db->order_by('name', 'ASC')->get('disposition')->result();
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+    }
+
+    public function get_proposal_projects()
+    {
+        $result = $this->db->order_by('created_at', 'desc')->get_where('project_details', ['type' => 'proposal'])->result();
+        if (!isset($result)) {
+            return false;
+        }
+        return $result;
+    }
+
+    public function get_deadline_projects($client_approval = false)
+    {
+        if (!$client_approval) {
+            return $this->db
+                    ->order_by('deadline', 'desc')
+                    ->where(['type' => 'live', 'deadline !=' => 0, 'deadline <' => date('Y-m-d', strtotime("+3 days"))])
+                    ->group_start()
+                            ->where(['assign_by' => $this->session->userdata('user_id')])
+                            ->or_where(['asign_user' => $this->session->userdata('user_id')])
+                    ->group_end()
+                    ->join('project', 'project.project_id = project_details.project_id')
+                    ->get('project_details')
+                    ->result();
+        }
+        return $this->db->order_by('deadline', 'desc')->get_where('project_details', ['type' => 'live', 'deadline !=' => 0, 'deadline <' => date('Y-m-d', strtotime("+3 days"))])->result();
+    }
+
+    public function update_project_type($type, $id)
+    {
+
+        $this->db->update('project_details', ['type' => $type], ['project_id' => $id]);
+    }
+
+    public function insert_project_tracking_history($type_of_change, $id, $changes)
+    {
+        $changes['project_id'] = $id;
+        $changes['type_of_change'] = $type_of_change;
+        $this->db->insert('project_tracking_history', $changes);
+    }
+
+    public function insert_project_msg($data)
+    {
+        $this->db->insert('project_msg', $data);
+    }
+
+    public function get_project_msg($id)
+    {
+        $user_id = $this->session->userdata('user_id');
+        $designation_id = $this->db->get_where('user', ['id' => $user_id])->row()->designation_id;
+
+        $company_id = $this->db->get_where('user', ['id' => $user_id])->row()->company_id;
+        $associated_member = $this->db->get_where('user', ['company_id' => $company_id])->result();
+
+        $associated_member = array_column($associated_member, 'id');
+
+        if(in_array($designation_id, [5,7]))
+            return $result = $this->db->order_by('created_at', 'desc')
+                                    ->where('project_id', $id)
+                                    ->group_start()
+                                        ->where('msg_by', $user_id)
+                                        ->or_where('msg_to', $user_id)
+                                        ->or_where_in('msg_to', $associated_member)
+                                    ->group_end()
+                                    ->get('project_msg')
+                                    ->result();
+        return $result = $this->db->order_by('created_at', 'desc')->get_where('project_msg', ['project_id' => $id])->result();
+    }
+
+    public function get_project_notes($project_id){
+        return $this->db->order_by('created_at', 'DESC')->get_where('project_notes', ['project_id' => $project_id])->result();
+    }
+
+    public function get_dashboard_project_msgs($client_approval = false)
+    {
+        $designation_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id;
+        $user_id = $this->session->userdata('user_id');
+
+        if(in_array($designation_id, [1,6])){
+            return $this->db->order_by('created_at', 'desc')->get_where('project_msg', ['admin_seen' => 0])->result();
+        }
+        elseif(in_array($designation_id, [5,7])){
+            $company_id = $this->db->get_where('user', ['id' => $user_id])->row()->company_id;
+            $associated_member = $this->db->get_where('user', ['company_id' => $company_id])->result();
+
+            $associated_member = array_column($associated_member, 'id');
+
+            return $this->db->order_by('project_msg.created_at', 'desc')
+                            ->where(['msg_to' => $user_id])
+                            // ->where(['msg_by !=' => $user_id])
+                            ->or_where_in('msg_to', $associated_member)
+                            ->where(['seen' => 0])
+                            ->group_start()
+                                    ->where(['assign_by' => $user_id])
+                                    ->or_where(['asign_user' => $user_id])
+                            ->group_end()
+                            ->join('project', 'project.project_id = project_msg.project_id')
+                            ->get('project_msg')
+                            ->result();
+        }
+        else{
+            return $this->db->order_by('project_msg.created_at', 'desc')
+                            ->where(['msg_to' => $user_id])
+                            ->where(['project_msg.seen' => 0])
+                            ->group_start()
+                                    ->where(['assign_by' => $user_id])
+                                    ->or_where(['asign_user' => $user_id])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                            ->group_end()
+                            ->join('project', 'project.project_id = project_msg.project_id')
+                            ->join('project_details', 'project_details.project_id = project_msg.project_id')
+                            ->get('project_msg')
+                            ->result();
+        }
+    }
+
+    public function get_dashboard_project_repllies($client_approval = false){
+        $designation_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id;
+        $user_id = $this->session->userdata('user_id');
+
+        if(in_array($designation_id, [1,6])){
+            return $this->db->order_by('created_at', 'desc')->get_where('project_msg', ['is_replied' => 1, 'admin_reply_seen' => 0])->result();
+        }
+        elseif(in_array($designation_id, [5,7])){
+            $company_id = $this->db->get_where('user', ['id' => $user_id])->row()->company_id;
+            $associated_member = $this->db->get_where('user', ['company_id' => $company_id])->result();
+
+            $associated_member = array_column($associated_member, 'id');
+
+            return $this->db->order_by('project_msg.created_at', 'desc')
+                            ->where(['msg_by' => $user_id])
+                            ->or_where_in('msg_by', $associated_member)
+                            // ->where(['msg_by !=' => $user_id])
+                            ->where(['is_replied' => 1])
+                            ->where(['reply_seen' => 0])
+                            ->group_start()
+                                    ->where(['assign_by' => $user_id])
+                                    ->or_where(['asign_user' => $user_id])
+                            ->group_end()
+                            ->join('project', 'project.project_id = project_msg.project_id')
+                            ->get('project_msg')
+                            ->result();
+        }
+        else{
+            return $this->db->order_by('project_msg.created_at', 'desc')
+                            ->where(['msg_by' => $user_id])
+                            ->where(['is_replied' => 1])
+                            ->where(['reply_seen' => 0])
+                            ->group_start()
+                                    ->where(['assign_by' => $user_id])
+                                    ->or_where(['asign_user' => $user_id])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                            ->group_end()
+                            ->join('project', 'project.project_id = project_msg.project_id')
+                            ->join('project_details', 'project_details.project_id = project_msg.project_id')
+                            ->get('project_msg')
+                            ->result();
+        }
+    }
+
+    // feb 11 2019
+    public function insert_disposition($data, $project_id)
+    {
+        $query=$this->db->where('project_id', $project_id)->get('project_disposition')->result_array();
+        
+        if (sizeof($query)<8) {
+            $result = $this->db->insert('project_disposition', $data);
+
+
+            // disposition add activity log
+            $user_id = $this->session->userdata('user_id');
+            $details_string = $this->db->get_where('disposition', ['disposition_id' => $data['disposition_id']])->row()->name;
+            $this->db->insert('project_activity_log',['project_id' => $project_id, 'activity_type' => 12, 'user_id' => $user_id, 'details' =>$details_string]);
+
+            if (!isset($result)) {
+                return false;
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+    public function disposition_details($project_id)
+    {
+        $this->db->select('project_disposition.*,disposition.name');
+        $this->db->join('disposition', 'project_disposition.disposition_id=disposition.disposition_id');
+        $this->db->where('project_disposition.project_id', $project_id);
+        $query=$this->db->get('project_disposition')->result_array();
+        return $query;
+    }
+    public function update_disposition($project_disposition_id)
+    {
+        $result = $this->db->where('project_disposition_id', $project_disposition_id)->update('project_disposition', ['flag'=>1]);
+        if (isset($result)) {
+            $result = $this->db->get_where('project_disposition', ['project_disposition_id' => $project_disposition_id])->row()->project_id;
+            
+
+            //details string      
+            $user_id = $this->session->userdata('user_id');
+            $project_id = $result;
+            $project_disposition = $this->db->get_where('project_disposition',['project_id' => $project_id])->result();
+            $updated_project_disposition_id = $project_disposition_id;
+            foreach ($project_disposition as $key => $value) {
+                if($value->project_disposition_id == $updated_project_disposition_id){
+                    if($key == 0) //if first project disposition is updated 
+                        $details_string = $this->db->get_where('disposition', ['disposition_id' => $project_disposition[$key]->disposition_id])->row()->name;
+                    else //if not then generated string with prev dis
+                        $details_string = $this->db->get_where('disposition', ['disposition_id' => $project_disposition[$key-1]->disposition_id])->row()->name.' to '.$this->db->get_where('disposition', ['disposition_id' => $project_disposition[$key]->disposition_id])->row()->name;
+                }
+            }
+
+            // activity log for disposition update
+            $this->db->insert('project_activity_log',['project_id' => $project_id, 'activity_type' => 13, 'user_id' => $user_id, 'details' => $details_string]);
+            return $result;
+        }
+        return false;
+    }
+
+    public function revert_disposition($project_disposition_id)
+    {
+        $user_id = $this->session->userdata('user_id');
+        $project_id = $this->db->get_where('project_disposition', ['project_disposition_id' => $project_disposition_id])->row()->project_id;
+
+        $project_reverted_disposition_id = $this->db->get_where('project_disposition', ['project_disposition_id' => $project_disposition_id])->row()->disposition_id;
+        
+        // details string what disposition reverted
+        $details_string = $this->db->get_where('disposition', ['disposition_id' => $project_reverted_disposition_id])->row()->name;
+
+        $this->db->insert('project_activity_log',['project_id' => $project_id, 'activity_type' => 14, 'user_id' => $user_id, 'details' => $details_string]);
+
+
+        $result = $this->db->query("UPDATE `project_disposition` SET `flag`=0 WHERE project_id= $project_id AND project_disposition_id>= $project_disposition_id");
+
+        if($result)
+            return $project_id;
+        return false;
+    }
+
+    public function delete_disposition($project_disposition_id)
+    {
+        $user_id = $this->session->userdata('user_id');
+        $project_id = $this->db->get_where('project_disposition', ['project_disposition_id' => $project_disposition_id])->row()->project_id;
+
+        $project_deleted_disposition_id = $this->db->get_where('project_disposition', ['project_disposition_id' => $project_disposition_id])->row()->disposition_id;
+        $details_string = $this->db->get_where('disposition', ['disposition_id' => $project_deleted_disposition_id])->row()->name;
+
+
+        $this->db->delete('project_disposition', ['project_disposition_id' => $project_disposition_id]);
+        $this->db->insert('project_activity_log',['project_id' => $project_id, 'activity_type' => 15, 'user_id' => $user_id, 'details' => $details_string]);
+
+        return $project_id;
+    }
+
+    public function reset_all_disposition($project_id){
+        $this->db->delete('project_disposition', ['project_id' => $project_id]);
+
+        //insert disposition
+        $disp = [44, 45, 46, 3, 47, 48, 49, 50];
+        foreach ($disp as $key) { 
+            $this->db->insert('project_disposition', ['project_id' => $project_id, 'disposition_id' => $key]);
+        }
+
+        // activity log
+        $user_id = $this->session->userdata('user_id');
+        $this->db->insert('project_activity_log',['project_id' => $project_id, 'activity_type' => 44, 'user_id' => $user_id]);
+    }
+
+    public function disposition_change_option($project_id, $val)
+    {
+        $user_id = $this->session->userdata('user_id');
+
+        switch ($val) {
+            case 'wax':
+                $details_string = 'Wax Only';
+                $disposition_ids = [44, 56, 46, 49, 50];
+                break;
+            case 'casting':
+                $details_string = 'Casting Only';
+                $disposition_ids = [44, 56, 46, 3, 49, 50];
+                break;
+            case 'repairs':
+                $details_string = 'Repairs';
+                $disposition_ids = [44, 56, 45, 48, 49, 50];
+                break;
+        }
+
+        $this->db->delete('project_disposition', ['project_id' => $project_id]);
+
+        foreach ($disposition_ids as $key) {
+            $this->db->insert('project_disposition', ['project_id' => $project_id, 'disposition_id' => $key]);
+        }
+
+
+
+        $this->db->insert('project_activity_log',['project_id' => $project_id, 'activity_type' => 45, 'user_id' => $user_id, 'details' => $details_string]);
+
+    }
+
+
+    //internal disposition
+    public function insert_disposition_internal($data, $project_id)
+    {
+        $query=$this->db->where('project_id', $project_id)->get('project_disposition_internal')->result_array();
+        
+        if (sizeof($query)<8) {
+            $result = $this->db->insert('project_disposition_internal', $data);
+            if (!isset($result)) {
+                return false;
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public function update_disposition_internal($project_disposition_id)
+    {
+        $result = $this->db->where('project_disposition_id', $project_disposition_id)->update('project_disposition_internal', ['flag'=>1]);
+        if (isset($result)) {
+            return $this->db->get_where('project_disposition_internal', ['project_disposition_id' => $project_disposition_id])->row()->project_id;
+        }
+        return false;
+    }
+
+    public function disposition_details_internal($project_id)
+    {
+        $this->db->select('project_disposition_internal.*,disposition.name');
+        $this->db->join('disposition', 'project_disposition_internal.disposition_id=disposition.disposition_id');
+        $this->db->where('project_disposition_internal.project_id', $project_id);
+        $query=$this->db->get('project_disposition_internal')->result_array();
+        return $query;
+    }
+
+    public function get_project_activity_log($project_id)
+    {
+        return $this->db->order_by('created_at', 'DESC')->get_where('project_activity_log', ['project_id' => $project_id])->result();
+    }
+
+    public function get_print_project_details($project_id)
+    {
+        return $this->db->get_where('print_project_details', ['project_id' => $project_id])->row();
+    }
+
+    public function activity_msg($activity_type_id)
+    {
+        # code...
+    }
+
+    public function get_all_projects_by_id($user_id){
+        // return  $this->db->order_by('created_at', 'desc')
+        //                         ->join('project_details', 'project.project_id = project_details.project_id')
+        //                         ->group_start()
+        //                             ->where(['assign_by' => $user_id])
+        //                             ->or_where(['asign_user' => $user_id])
+        //                         ->group_end()
+        //                         ->get('project')
+        //                         ->result();
+        return $this->db->order_by('created_at', 'desc')
+                                ->join('project_details', 'project.project_id = project_details.project_id')
+                                ->group_start()
+                                    ->where(['assign_by' => $user_id])
+                                    ->or_where(['asign_user' => $user_id])
+                                    ->or_where("FIND_IN_SET('$user_id', `assignee`)")
+                                ->group_end()
+                                ->get('project')
+                                ->result();
+    }
+
+    public function get_msg_user()    {
+        return $this->db->select('*')->join('designation', 'user.designation_id = designation.designation_id')->where(['is_deleted' => '0', 'permission' => 1])->get('user')->result();
+    }
+
+    public function get_associated_member($user_id){
+        $company_id = $this->db->get_where('user', ['id' => $user_id])->row()->company_id;
+        return $this->db->select('*')->join('designation', 'user.designation_id = designation.designation_id')->where(['is_deleted' => '0', 'permission' => 1, 'user.company_id' => $company_id, 'user.id !=' => $user_id])->get('user')->result();
+    }
+
+    public function get_project_archive_group($project_id='')
+    {
+        return $this->db->get_where('project_archive_group', ['project_id' => $project_id])->result();
+    }
+
+
+    public function get_inactive_projects(){
+        $projects = $this->db->get('project')->result();
+        $project_ids = array_column($projects, 'project_id');
+
+        $in_active_project_ids = [];
+
+        foreach ($project_ids as $key) {
+            $project = $this->db->get_where('project_details', ['project_id' => $key])->row();
+            $activity = $this->db->order_by('created_at', 'DESC')->get_where('project_activity_log', ['project_id' => $key])->row();
+            if(empty($activity)){
+                $diff = strtotime($project->created_at) - time();
+                $days_diff = abs(round($diff / 86400));
+                if($days_diff >= 2)
+                    array_push($in_active_project_ids, $key);
+            }
+            else{
+                $diff = strtotime($activity->created_at) - time();
+                $days_diff = abs(round($diff / 86400));
+                if($days_diff >= 2)
+                    array_push($in_active_project_ids, $key);
+            }
+        }
+
+        return $in_active_project = $this->db->order_by('created_at', 'DESC')->where('type', 'live')->where_in('project_id', $in_active_project_ids)->get('project_details')->result();
+
+    }
+
+
+    public function get_cad_slots_by_project_id($project_id){
+
+        return $this->db->select('*')->join('user', 'user.id = cad_slots.user_id')->join('designation', 'user.designation_id = designation.designation_id')->where(['project_id' => $project_id])->get('cad_slots')->result();
+    }
+
+    // public function get_cad_3d_print_date_by_project_id($project_id){
+
+    //     return $this->db->select('*')->join('user', 'user.id = cad_3d_print_date.user_id')->join('designation', 'user.designation_id = designation.designation_id')->where(['project_id' => $project_id])->get('cad_3d_print_date')->result();
+    // }
+}

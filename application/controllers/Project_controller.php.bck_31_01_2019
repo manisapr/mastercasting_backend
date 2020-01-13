@@ -1,0 +1,182 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class Project_controller extends CI_Controller {
+
+	/**
+	 * @param $type_of_change
+	 *
+	 */
+
+	public $type_of_change = ['project_type' => 1];
+
+	public function __construct(){
+		parent::__construct();
+		$this->load->model('projectmodel');
+		date_default_timezone_set('Asia/Calcutta');
+		if(!$this->session->userdata('user_id'))
+			return redirect();
+	}
+
+	public function index(){
+		$this->load->view('all_jobs');
+	}
+
+	public function all_projects(){
+		$data['projects'] = $this->projectmodel->get_all_projects();
+		$this->load->view('all_projects',$data);
+	}
+	
+	public function add_project(){
+		$data = $this->project_meta_fileds();
+		// $data['gems_shape'] = explode(',', $this->projectmodel->get_meta_fileds('gems',6)->value);
+		// $data['gems_cert'] = explode(',', $this->projectmodel->get_meta_fileds('gems',7)->value);
+		// echo "<pre>";
+		// print_r($data['specification_finish']);die;
+		$data['client_approval'] = $this->client_approval('designation_id');
+		$this->load->view('add_projects',$data);
+	}
+
+	public function add_project_action(){
+
+		$user_id = $this->session->userdata('user_id');
+
+		$project_details = $this->input->post('project_details');
+
+		$project_details['assignee'] = implode(',', $project_details['assignee']);
+		
+		//insert project
+		$project = $this->input->post('project');
+		$project['project_name'] = $project_details['title'];
+		$project['price'] = $project_details['price'];
+		$project['assign_by'] = $this->session->userdata('user_id');
+		$last_insert_id = $this->projectmodel->insert_project($project);
+		if($last_insert_id === false)
+			return "error";
+		
+		// new project details
+		$project_details['project_id'] = $last_insert_id;
+		$project_details['updated_at'] = date('Y-m-d H:i:s');
+		$result = $this->projectmodel->insert_project_details($project_details);
+		if($result === false)
+			return "error";
+
+		// $project_specification
+		$project_specification = $this->input->post('project_specification');
+
+		if($project_specification){
+			$project_specification['project_id'] = $last_insert_id;
+			$result = $this->projectmodel->insert_project_specification($project_specification);
+			if($result === false)
+				return "error";
+		}
+
+		//project gem spec
+		// $project_gem_spec = $this->input->post('project_gem_spec');
+		// $project_gem_spec['carats'] = implode('-', $this->input->post('carats'));
+		// $project_gem_spec['cut'] = implode('-', $this->input->post('cut'));
+		// $project_gem_spec['polish'] = implode('-', $this->input->post('polish'));
+		// $project_gem_spec['symmetry'] = implode('-', $this->input->post('symmetry'));
+		// $project_gem_spec['clarity'] = implode('-', $this->input->post('clarity'));
+		// $project_gem_spec['color'] = implode('-', $this->input->post('color'));
+		// $project_gem_spec['length'] = implode('-', $this->input->post('length'));
+		// $project_gem_spec['width'] = implode('-', $this->input->post('width'));
+		// $project_gem_spec['depth'] = implode('-', $this->input->post('depth'));
+		// $project_gem_spec['project_id'] = $last_insert_id;
+
+		// $result = $this->projectmodel->insert_project_gem_spec($project_gem_spec);
+		// if($result === false)
+		// 	return "error";
+		$project_msg = $this->input->post('project_msg');
+		$project_msg['project_id'] = $last_insert_id;
+		$project_msg['msg_by'] = $user_id;
+		if($project_msg['msg'] != '')
+			$this->projectmodel->insert_project_msg($project_msg);
+
+
+		$this->session->set_flashdata(['project_insert' => 'success']);
+		redirect('projects/update_project/'.$last_insert_id);
+		
+	}
+
+	public function project_details($id){
+		$data = $this->project_meta_fileds();
+		$data['project'] = $this->projectmodel->get_project($id);
+		$data['project_details'] = $this->projectmodel->get_project_details($id);
+		$data['project_specification'] = $this->projectmodel->get_project_specification($id);
+		$data['project_msg'] = $this->projectmodel->get_project_msg($id);
+		return $this->load->view('project_details',$data);
+	}
+
+	public function update_project($id){
+		$data = $this->project_meta_fileds();
+		$data['project'] = $this->projectmodel->get_project($id);
+		$data['project_details'] = $this->projectmodel->get_project_details($id);
+		$data['project_specification'] = $this->projectmodel->get_project_specification($id);
+		$data['project_msg'] = $this->projectmodel->get_project_msg($id);
+		return $this->load->view('update_project',$data);
+	}
+
+	public function project_meta_fileds(){
+		$data['client_approval'] = $this->client_approval('designation_id');
+		$data['employee'] = $this->projectmodel->get_employee();
+		$data['assignee'] = $this->projectmodel->get_assignee();
+		$data['manager'] = $this->projectmodel->get_manager();
+		$data['client'] = $this->projectmodel->get_client();
+		$data['disposition'] = $this->projectmodel->get_disposition();
+		$data['project_title'] = $this->projectmodel->get_meta_fileds('project', 1);
+		$data['specification_finish'] = explode(',', $this->projectmodel->get_meta_fileds('specification',2)->value);
+		$data['specification_purity'] = explode(',', $this->projectmodel->get_meta_fileds('specification',3)->value);
+		$data['specification_ring_size']=explode(',', $this->projectmodel->get_meta_fileds('specification',4)->value);
+		$data['specification_plating'] = explode(',', $this->projectmodel->get_meta_fileds('specification',5)->value);
+		return $data;
+	}
+
+	public function client_approval(){
+		if($this->session->userdata('designation_id') != 5)
+			return true;
+		return false;
+	}
+
+	public function update_project_type($type, $id){
+		switch ($type) {
+			case 'approve':
+				$this->projectmodel->update_project_type('live',$id);
+				$this->projectmodel->insert_project_tracking_history($this->type_of_change['project_type'], $id, ['project_type' => 'live']);
+				break;
+			case 'reject':
+				$this->projectmodel->update_project_type('cancelled',$id);
+				$this->projectmodel->insert_project_tracking_history($this->type_of_change['project_type'], $id, ['project_type' => 'cancelled']);
+				break;
+			case 'redo':
+				// todo later
+				echo "todo";
+				break;
+		}
+		redirect('Master_controllers');
+	}
+
+	public function insert_msg(){
+		$project_msg['msg'] = $this->input->post('msg');
+		$project_msg['msg_to'] = $this->input->post('msg_to');
+		$project_msg['project_id'] = $this->input->post('project_id');
+		$project_msg['msg_by'] = $this->session->userdata('user_id');
+
+		if($project_msg['msg'] != '')
+			$this->projectmodel->insert_project_msg($project_msg);
+
+		$data = $this->projectmodel->get_project_msg($project_msg['project_id']);
+
+	?>
+		<?php foreach ($data as $key) : ?>
+            <tr>
+                <td><?= $key->msg_by == '' ? '' : $this->db->get_where('user',['id' => $key->msg_by])->row()->name  ?></td>
+                <td><?= $key->msg_to == 0 ? '' : $this->db->get_where('user',['id' => $key->msg_to])->row()->name  ?></td>
+                <td><?= $key->msg ?></td>
+                <td><?= $key->created_at ?></td>
+            </tr>
+        <?php endforeach; ?>
+	<?php }
+
+
+}

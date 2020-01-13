@@ -1,0 +1,1635 @@
+<?php $designation_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id; ?>
+
+<script src="//code.jquery.com/jquery-3.3.1.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css" />
+<script src="https://cdn.jsdelivr.net/gh/fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script>
+ 
+
+
+<!-- BEGIN HEADER -->
+<?php include 'inc/header.php'; ?>
+
+<style>
+    .explorer-frame .file-preview-html {
+        display: flex;
+        border: 1px solid #ddd;
+        padding: 8px;
+        overflow: none!important; 
+    }
+    .proj_img_chk{
+        margin: 15px 5px 0 0!important;
+        line-height: normal!important;
+    }
+    #kvFileinputModal img{
+        width: 100%!important;
+    }
+    .theme-explorer-fas .file-actions-cell{
+        width: 140px!important;
+    }
+    .proj_img{
+        width: 78%;
+        height: auto;
+        object-fit: contain!important;
+    }
+    /*.file-input .file-caption{
+        width: 80%!important;
+    }*/
+    label{
+        font-weight: bold;
+    }
+</style>
+
+<?php if(!$client_approval): ?>
+<style>
+    .kv-file-remove{
+        display: none!important;
+    }
+</style>
+<?php endif; ?>
+
+<!-- <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" crossorigin="anonymous"> -->
+
+<!-- END HEADER -->
+<!-- BEGIN HEADER & CONTENT DIVIDER -->
+<div class="clearfix"> </div>
+<!-- END HEADER & CONTENT DIVIDER -->
+<!-- BEGIN CONTAINER -->
+<div class="page-container">
+    <!-- BEGIN SIDEBAR -->
+    <?php include 'inc/sidebar.php'; ?>
+    <!-- END SIDEBAR -->
+    <!-- BEGIN CONTENT -->
+    <div class="page-content-wrapper">
+        <!-- BEGIN CONTENT BODY -->
+        <div class="page-content">
+            <!-- BEGIN PAGE HEADER-->
+            
+            <!-- BEGIN PAGE BAR -->
+            <div class="page-bar">
+                <ul class="page-breadcrumb">
+                    <li> <a href="<?php echo base_url()?>">Home</a> <i class="fa fa-circle"></i> </li>
+                    <li> <a href="<?php echo base_url('projects/all_projects')?>">Projects</a> <i class="fa fa-circle"></i> </li>
+                    <li> <span>Projects Details</span> </li>
+                </ul>
+            </div>
+            <!-- END PAGE BAR -->
+            <!-- BEGIN PAGE TITLE-->
+            <h1 class="page-title">Project Details</h1>
+            <!-- End PAGE TITLE-->
+            <div class="row">
+                <div class="col-md-12">
+                    <!-- BEGIN EXAMPLE TABLE PORTLET-->
+                    <div class="portlet light bordered">
+                        <div class="portlet-title">
+                            <div class="caption font-dark">
+                                <i class="icon-briefcase font-dark"></i>
+                                <span class="caption-subject bold uppercase"><?= $project_details->title ?> - J<?php echo $project->project_id ?> 
+                                <span style="margin-left: 20px">Assigned By <?php echo $project->assign_by == 0 ? '' : $this->db->get_where('user', ['id' => $project->assign_by])->row()->name  ?></span></span>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 text-right" style="margin-bottom: 20px">
+                                    <button class="btn btn-sm btn-default" data-toggle="modal" data-target="#myModal">Gallery</button>
+                                    <?php if($client_approval): ?>
+                                    <a href="#project_print" id="print_job_sheet" class="btn btn-sm btn-default">Print Job Sheet</a>
+                                    <a target="_blank" href="<?php echo base_url('Project_controller/print_job_label/'.$this->uri->segment(3))?>" class="btn btn-sm btn-default">Print Job Label</a>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                                    
+                                </div>
+                                <style>
+                                    .mt-element-step .step-thin .mt-step-number {
+                                    font-size: 26px;
+                                    border-radius: 50%!important;
+                                    float: left;
+                                    margin: auto;
+                                    padding: 3px 14px;
+                                    }
+                                    .step-line .mt-step-number {
+                                    font-size: 16px;
+                                    border-radius: 50%!important;
+                                    display: inline-block;
+                                    margin: auto auto 5px;
+                                    padding: 5px;
+                                    border: 3px solid #e5e5e5;
+                                    position: relative;
+                                    z-index: 5;
+                                    height: 40px;
+                                    width: 40px;
+                                    text-align: center;
+                                    }
+                                    .step-line .mt-step-title:after, .step-line .mt-step-title:before {
+                                    content: '';
+                                    height: 3px;
+                                    width: 130%;
+                                    position: absolute;
+                                    background-color: #e5e5e5;
+                                    top: -25px;
+                                    z-index: 4;
+                                    transform: translateY(-100%);
+                                    }
+                                    .mt-step-col{
+                                    margin-right: 40px;
+                                    }
+                                    .update_disposition{
+                                    margin-bottom: 5px;
+                                    }
+                                    .revert{
+                                    margin-bottom: 5px;
+                                    }
+                                    .step-line .mt-step-title {
+                                    font-size: 16px;
+                                    font-weight: 400;
+                                    position: relative;
+                                    }
+                                    .panel{
+                                        margin: 10px 0;
+                                    }
+                                </style>
+                                <div class="row step-line" id="project_disposition_steps">
+                                    <?php echo ($project_dispositions) ?>
+                                </div>
+                                <?php if ($client_approval) : ?>
+                                <div class="row step-line" id="project_disposition_internal_steps">
+                                    <?php echo $project_dispositions_internal ?>
+                                </div>
+                                <?php endif; ?>
+                                
+                                <div class="portlet-body">
+                                    <form id="" class="form-horizontal" action="<?php echo base_url('Project_controller/update_project_action/'.$this->uri->segment(3))?>" method="POST">
+                                        <!-- == -->
+                                        <div class="form msg-frm">
+                                            <!-- END TASK HEAD -->
+                                            <!-- Created at -->
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <input type="text" class="form-control todo-taskbody-tasktitle" value="<?= date('D, F d, Y') ?>" disabled>
+                                                </div>
+                                            </div>
+
+                                            <?php if($client_approval): ?>
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <label for="">Estimated Price</label>
+                                                    <input type="text" class="form-control" name="project[estimated_price]" value="<?= $project_details->estimated_price == 0 ? '' : $project_details->estimated_price ?>" placeholder="Estimated Price">
+                                                </div>
+                                            </div>
+                                            <?php endif; ?>
+
+                                            <!-- Type -->
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <label for="">Project Type</label>
+                                                    <select name="project[type]" class="form-control" <?php echo !$client_approval ? 'disabled' : '' ?>>
+                                                        <option value="proposal" <?= $project_details->type == 'proposal' ? 'selected' : '' ?>>Proposal</option>
+                                                        <option value="live" <?= $project_details->type == 'live' ? 'selected' : '' ?>>Live</option>
+                                                        <option value="completed" <?= $project_details->type == 'completed' ? 'selected' : '' ?>>Completed</option>
+                                                        <option value="cancelled" <?= $project_details->type == 'cancelled' ? 'selected' : '' ?>>Cancelled</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <?php if($client_approval): ?>
+                                            <!-- Manager -->
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <label for="">Project Manager</label>
+                                                    <select name="project[assignee]" class="form-control">
+                                                        <option value="">Set Manager</option>
+                                                        <?php foreach ($manager as $key) : ?>
+                                                        <option value="<?= $key->id ?>"
+                                                            <?= $project->manager_category == $key->id ? 'selected' : ''?>>
+                                                            <?= $key->name ?>
+                                                        </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <!-- Client -->
+                                            <!-- <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <select name="project[assignee]" class="form-control">
+                                                        <option value="">Set Client</option>
+                                                        <?php foreach ($client as $key) : ?>
+                                                        <option value="<?= $key->id ?>"
+                                                            <?= $project->asign_user == $key->id ? 'selected' : ''?>>
+                                                            <?= $key->name ?>
+                                                        </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div> -->
+                                            <!-- Asignee -->
+                                            <?php foreach (explode(',', $project_details->assignee) as $key_one) : ?>
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <label for="">Project Assignee</label>
+                                                    <select name="project[assignee]" class="form-control">
+                                                        <option value="">Set Assignee</option>
+                                                        <?php foreach ($assignee as $key) : ?>
+                                                        <option value="<?= $key->id ?>"
+                                                            <?= $key_one == $key->id ? 'selected' : ''?>><?= $key->name ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <!-- <div class="col-md-4">
+                                                    <select class="form-control" name="" id="">
+                                                        <option value="">Select Profile</option>
+                                                        <option value="">Select Profile</option>
+                                                        <option value="">Select Profile</option>
+                                                    </select>
+                                                </div> -->
+                                            </div>
+                                            <?php endforeach; ?>
+                                            <?php endif; ?>
+
+                                            <?php if ($client_approval) : ?>
+                                            <!-- disposition -->
+                                            <hr style="border-top: 1px solid #bdbdbd;">
+                                            <div class="form-group">
+                                                <label class="col-md-12" style="margin: 0 0 20px 0" for="disposition">Disposition</label><br>
+                                                <div class="col-md-10">
+                                                    <select name="project[disposition]" id="disposition" class="form-control">
+                                                        <option value="0">No Disposition Assigned</option>
+                                                        <?php foreach ($disposition as $key) : ?>
+                                                        <option value="<?= $key->disposition_id ?>" <?= $project_details->disposition == $key->disposition_id ? 'selected' : ''?>><?= $key->name ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <?php if ($client_approval) : ?>
+                                                <div class="col-md-2">
+                                                    <button class="btn btn-default" type="button" id="Add">Add Disposition</button>
+                                                </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <?php endif; ?>
+                                            <?php if ($client_approval) : ?>
+                                            <!-- disposition internal -->
+                                            <div class="form-group">
+                                                <div class="col-md-10">
+                                                    <select name="project[disposition]" id="disposition_internal" class="form-control">
+                                                        <option value="0">No Disposition Assigned</option>
+                                                        <?php foreach ($disposition as $key) : ?>
+                                                        <option value="<?= $key->disposition_id ?>" <?= $project_details->disposition == $key->disposition_id ? 'selected' : ''?>><?= $key->name ?></option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                                <?php if ($client_approval) : ?>
+                                                <div class="col-md-2">
+                                                    <button class="btn btn-default" type="button" id="add_disposition_internal">Add Disposition</button>
+                                                </div>
+                                                <?php endif; ?>
+                                            </div>
+                                            <hr style="border-top: 1px solid #bdbdbd;">
+                                            <?php endif; ?>
+
+                                            <!-- Priority -->
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <label for="">Project Priority</label>
+                                                    <select name="project[priority]" class="form-control" <?php echo !$client_approval ? 'disabled' : '' ?>>
+                                                        <option value="standard"
+                                                        <?= $project_details->priority == 'standard' ? 'selected' : '' ?>>Standard Priority</option>
+                                                        <option value="high"
+                                                        <?= $project_details->priority == 'high' ? 'selected' : '' ?>>High Priority</option>
+                                                        <option value="critical"
+                                                        <?= $project_details->priority == 'critical' ? 'selected' : '' ?>>Critical</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <!-- Deadline -->
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <label for="">Project Deadline</label>
+                                                    <select name="project[deadline]" class="form-control">
+                                                        <?php if($project_details->deadline != NULL): ?>
+                                                        <option value="<?php echo $project_details->deadline ?>">
+                                                            <?php echo date('D, F d, Y', strtotime($project_details->deadline));  ?>
+                                                        </option>
+                                                        <?php else: ?>
+                                                        <option value="">Select Deadline</option>
+                                                        <?php endif; ?>
+                                                        <?php for ($i = -1; $i > -90; $i--) { ?>
+                                                        <option value="<?= $deadline = date('Y-m-d', strtotime("-$i days")); ?>"
+                                                            <?= $project_details->deadline == $deadline ? 'selected' : '' ?>>
+                                                            <?= date('D, F d, Y', strtotime("-$i days")); ?></option>
+                                                        <?php } ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <!-- Price -->
+                                            <div class="form-group">
+                                                <div class="col-md-8">
+                                                    <label for="">Project Price</label>
+                                                    <input value="<?= $project_details->price ?>" name="project[price]" type="number" class="form-control" placeholder="Price..."  <?php echo !$client_approval ? 'disabled' : '' ?>>
+                                                </div>
+                                                <?php if ($client_approval) : ?>
+                                                <div class="col-md-4">
+                                                    <label for="">Project Price Type</label>
+                                                    <select name="project[price_type]" class="form-control" <?php echo !$client_approval ? 'disabled' : '' ?>>
+                                                        <option value="">Select price Type</option>
+                                                        <option value="plus_tax" <?= $project_details->price_type == 'plus_tax' ? 'selected' : ''?>>Plus Tax</option>
+                                                        <option value="include_tax" <?= $project_details->price_type == 'include_tax' ? 'selected' : ''?>>Include Tax</option>
+                                                        <option value="tax_exempt" <?= $project_details->price_type == 'tax_exempt' ? 'selected' : ''?>>Tax Exempt</option>
+                                                    </select>
+                                                </div>
+                                                <?php endif; ?>
+                                            </div>
+
+                                            <!-- PO# -->
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <label for="">Project Po</label>
+                                                    <input value="<?= $project_details->po ?>" name="project[po]" type="text" class="form-control" placeholder="PO#">
+                                                </div>
+                                            </div>
+                                            <!-- Tracking# -->
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <label for="">Project Tracking</label>
+                                                    <input value="<?= $project_details->tracking ?>" name="project[tracking]" type="text" class="form-control" placeholder="Tracking#">
+                                                </div>
+                                            </div>
+                                            <!-- TASK DESC -->
+                                            <!-- <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <textarea class="form-control todo-taskbody-taskdesc" rows="8" placeholder="Task Description..."></textarea>
+                                                </div>
+                                            </div> -->
+                                            <!-- END TASK DESC -->
+                                            <!-- Job title -->
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <label for="">Project Title</label>
+                                                    <input id="job_title" name="project[title]" type="text" value="<?= $project_details->title ?>" class="form-control" placeholder="Job title" maxlength="30">
+                                                </div>
+                                                <div class="col-md-12 text-right">
+                                                    <span><span id="job_title_cn"></span>/30</span>
+                                                    <a id="sample_editable_1_new" data-toggle="modal" data-target="#revision_history"><i class="fas fa-info-circle"></i></a>
+                                                </div>
+                                            </div>
+                                            <style type="text/css">
+                                                #project_description_history{
+                                                   height: 145px;
+                                                   overflow-y: auto;
+                                                }
+                                                #project_description_history::-webkit-scrollbar {
+                                                        width: 0px !important;  /* remove scrollbar space */
+                                                        background: transparent !important;  /* optional: just make scrollbar invisible */
+                                                }
+                                                    /* optional: show position indicator in red */
+                                                #project_description_history::-webkit-scrollbar-thumb {
+                                                        background: #FF0000 !important;
+                                                }
+                                            </style>
+                                            <!-- Job desc -->
+                                            <div class="form-group">
+                                                <div class="col-md-6">
+                                                    <label for="">Project Description</label>
+                                                    <textarea name="project[description]" class="form-control" rows="8" placeholder="Job Description..."><?= $project_details->description ?></textarea>
+                                                    <?php if(!$client_approval && $project_details->desc_approval == 0): ?>
+                                                    <span style="margin-top: 20px" class="label label-sm label-success">Waiting for approval</span>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h4 style="margin-top: 0">Description History</h4>
+                                                    <div id="project_description_history">
+                                                        <table class="table">
+                                                            <tbody>
+                                                                <?php foreach ($project_description_history as $key): ?>
+                                                                <tr>
+                                                                    <td><a href="<?php echo base_url('Project_controller/project_description/'.$key->project_description_history_id)?>"><?php echo $key->description ?></a></td>
+                                                                    <td>
+                                                                    <?php echo time_elapsed_string(date("Y-m-d H:i:s", strtotime($key->created_at) + (5*60*60) + 30*60)) ?>
+                                                                    </td>
+                                                                </tr>
+                                                                <?php endforeach; ?>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                                <!-- <div class="col-md-12 text-right" style="margin-top: 10px">
+                                                    <a id="sample_editable_1_new" data-toggle="modal" data-target="#revision_history"><i class="fas fa-history"></i></a>
+                                                </div> -->
+                                            </div>
+                                            <div class="form-group">
+                                                <div class="col-md-12">
+                                                    <button type="submit" class="btn btn-circle btn-md green">Save</button>
+                                                </div>
+                                            </div>
+                                            
+                                        </div>
+                                    </form>
+                                    <!-- specification -->
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <button class="btn" type="button" data-toggle="collapse" data-target="#multiCollapseExample1" aria-expanded="false" aria-controls="multiCollapseExample2">Specification</button>
+                                            <button style="float: right;" class="btn" type="button" data-toggle="collapse" data-target="#multiCollapseExample2" aria-expanded="false" aria-controls="multiCollapseExample2">Add Specification</button>
+                                        </div>
+                                        
+                                        <div class="collapse multi-collapse" id="multiCollapseExample2">
+                                            <form id="" action="<?php echo base_url('Project_controller/update_project_specification_action/'.$project->project_id)?>" class="form-horizontal" method="POST">
+                                                <div class="form msg-frm" style="padding: 20px !important">
+                                                    <div class="form-group">
+                                                        <!-- Finish -->
+                                                        <div class="col-md-2">
+                                                            <span>Finish</span>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <select name="project_specification[finish]" class="form-control">
+                                                                <option value="">Choose Value</option>
+                                                                <?php foreach ($specification_finish as $key => $value) : ?>
+                                                                <option value="<?= $value ?>"
+                                                                    <?= $project_specification->finish == $value ? 'selected' : ''?>><?= $value ?></option>
+                                                                <?php endforeach ?>
+                                                            </select>
+                                                        </div>
+                                                        <!-- Purity / Color / Metal -->
+                                                        <div class="col-md-2">
+                                                            <span>Purity / Color / Metal</span>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <select name="project_specification[purity]" class="form-control">
+                                                                <option value="">Choose Value</option>
+                                                                <?php foreach ($specification_purity as $key => $value) : ?>
+                                                                <option value="<?= $value ?>" <?= $project_specification->purity == $value ? 'selected' : ''?>><?= $value ?></option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <!-- Ring Size -->
+                                                        <div class="col-md-2">
+                                                            <span>Ring Size</span>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <select name="project_specification[ring_size]" class="form-control">
+                                                                <option value="">Choose Value</option>
+                                                                <?php foreach ($specification_ring_size as $key => $value) : ?>
+                                                                <option value="<?= $value ?>" <?= $project_specification->ring_size == $value ? 'selected' : ''?>><?= $value ?></option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </div>
+                                                        <!-- Plating -->
+                                                        <div class="col-md-2">
+                                                            <span>Plating</span>
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <select name="project_specification[plating]" class="form-control">
+                                                                <option value="">Choose Value</option>
+                                                                <?php foreach ($specification_plating as $key => $value) : ?>
+                                                                <option value="<?= $value ?>" <?= $project_specification->plating == $value ? 'selected' : ''?>><?= $value ?></option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="form-group">
+                                                        <div class="col-md-12">
+                                                            <input value="<?= $project_specification->custom ?>" name="project_specification[custom]" type="text" placeholder="Custom Specification" class="form-control">
+                                                        </div>
+                                                    </div>
+
+                                                    
+                                                    <div class="form-actions right todo-form-actions">
+                                                        <button type="submit" class="btn btn-circle btn-sm green">Save Specification</button>
+                                                    </div>
+                                                    
+                                                </div>
+                                            </form>
+                                        </div>
+                                        
+                                        <div class="collapse multi-collapse" id="multiCollapseExample1">
+                                            <ul>
+                                                <?php //if($project_specification->ring_size != ''): ?>
+                                                <li>Ring Size : <?php echo $project_specification->ring_size ?></li>
+                                                <?php //endif; ?>
+                                                <?php //if($project_specification->purity != ''): ?>
+                                                <li>Purity / Color / Metal:  <?php echo $project_specification->purity ?></li>
+                                                <?php //endif; ?>
+                                                <?php //if($project_specification->plating != ''): ?>
+                                                <li>Plating:  <?php echo $project_specification->plating ?></li>
+                                                <?php //endif; ?>
+                                                <?php //if($project_specification->finish != ''): ?>
+                                                <li>Finish:  <?php echo $project_specification->finish ?></li>
+                                                <?php //endif; ?>
+                                                <?php //if($project_specification->custom != ''): ?>
+                                                <li>Custom:  <?php echo $project_specification->custom ?></li>
+                                                <?php //endif; ?>
+                                            </ul>
+
+                                            <div style="margin: 20px">
+
+                                                <h4>Specification history</h4>
+
+                                                <table class="table">
+                                                    <tbody>
+                                                        <?php foreach ($project_specification_history as $key): ?>
+                                                        <tr>
+                                                            <td><?php echo ucwords($key->type).' changed from '.$key->value ?></td>
+                                                           <!--  <td>
+                                                                <?php //echo time_elapsed_string(date("Y-m-d H:i:s", strtotime($key->created_at))) ?>
+                                                            </td> -->
+                                                            <td>
+                                                                <?php echo time_elapsed_string(date("Y-m-d H:i:s", strtotime($key->created_at) + (5*60*60) + 30*60)) ?>
+                                                            </td>
+                                                            <!-- <td><?php //echo time_elapsed_string((strtotime($key->created_at) - 5*60)) ?></td> -->
+                                                        </tr>
+                                                        <?php endforeach; ?>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- end specification -->
+
+                                    <!-- message -->
+                                    <div class="panel panel-default" id="message_panel">
+                                        <div class="panel-heading">
+                                            <button id="messaging_id" class="btn" type="button" data-toggle="collapse" data-target="#messaging" aria-expanded="true" aria-controls="multiCollapseExample2">Messaging</button>
+                                            <button id="reply_btn"  style="float: right;" class="btn" type="button" data-toggle="collapse" data-target="#create_msg" aria-expanded="false" aria-controls="create_msg">Create Message</button>
+                                        </div>
+                                        <div class="collapse multi-collapse" id="create_msg">
+                                            <div class="form msg-frm" style="padding: 20px !important">
+                                                <form class="form-horizontal" id="message_send" action="">
+                                                    <div class="form-group">
+                                                        <div class="col-md-<?= $client_approval ? '8' : '12'?>">
+                                                            <input name="msg" type="text" placeholder="Message" class="form-control">
+                                                        </div>
+                                                        <?php if ($client_approval) : ?>
+                                                        <div class="col-md-4">
+                                                            <select class="form-control" name="msg_to" id="">
+                                                                <option value="">Select Employee</option>
+                                                                <?php foreach ($employee as $key) : ?>
+                                                                <option value="<?=  $key->id ?>"><?=  $key->name ?></option>
+                                                                <?php endforeach; ?>
+                                                            </select>
+                                                        </div>
+                                                        <?php endif; ?>
+                                                    </div>
+                                                    <input type="hidden" name="project_id" value="<?= $project->project_id ?>">
+                                                    <div class="form-actions right todo-form-actions">
+                                                        <button type="submit" class="btn btn-circle btn-sm green">
+                                                        Send
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                                <form class="form-horizontal" id="reply_send" action="">
+                                                    <div class="form-group">
+                                                        <div class="col-md-12">
+                                                            <input name="msg" type="text" placeholder="Message" class="form-control">
+                                                        </div>
+                                                    </div>
+                                                    <input type="hidden" name="project_id" value="<?= $project->project_id ?>">
+                                                    <input type="hidden" id="project_msg_id" name="project_msg_id">
+                                                    <div class="form-actions right todo-form-actions">
+                                                        <button type="submit" class="btn btn-circle btn-sm green">
+                                                        Send
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="collapse multi-collapse" id="messaging">
+                                            <table class="table" style="margin: 20px">
+                                                <thead>
+                                                    <tr>
+                                                        <td>Msg By</td>
+                                                        <td>Msg To</td>
+                                                        <td>Msg</td>
+                                                        <td>Reply</td>
+                                                        <td>Messaged At</td>
+                                                        <td></td>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="msg_tbody">
+                                                    <?php foreach ($project_msg as $key) : ?>
+                                                    <tr>
+                                                        <td><?= $key->msg_by == '' ? '' : $this->db->get_where('user', ['id' => $key->msg_by])->row()->name  ?></td>
+                                                        <td><?= $key->msg_to == 0 || $key->msg_to == NULL ? '' : $this->db->get_where('user', ['id' => $key->msg_to])->row()->name  ?></td>
+                                                        <td><?= $key->msg ?></td>
+                                                        <td><?= $key->reply ?></td>
+                                                        <td><?= $key->created_at ?></td>
+                                                        <td>
+                                                            <?php if($key->msg_to != 0): ?>
+                                                                <?php if($key->msg_to == $this->session->userdata('user_id')): ?>
+                                                                <?php if($key->reply == ''): ?>
+                                                                <button class="btn reply" value="<?php echo $key->project_msg_id ?>" href="<?php echo base_url('Project_controller/msg_history/'.$key->project_id.'/'.$key->msg_to)?>">Reply</button>
+                                                                <?php endif; ?>
+                                                                <?php endif; ?>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                    </tr>
+                                                    <?php endforeach; ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <!-- end message -->
+
+                                    <!-- Upload Image -->
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <button class="btn" type="button" data-toggle="collapse" data-target="#upload_img" aria-expanded="true" aria-controls="multiCollapseExample2">Project Files</button>
+                                        </div>
+                                        <div class="collapse multi-collapse" id="upload_img">
+                                            <div class="row" style="margin: 20px">
+                                               
+                                                <div class="col-md-12">
+                                                    <form enctype="multipart/form-data" method="POST" action="<?php echo base_url('Project_controller/file_action/'.$this->uri->segment(3))?>">
+                                                        <div class="row">
+                                                            <?php if($client_approval): ?>
+                                                            <div class="col-md-6">
+                                                                <select class="form-control" name="action" id="" required="">
+                                                                    <option value="" disabled selected>Select Action</option>
+                                                                    <option value="thumbnail">Mark as Thumbnail</option>
+                                                                    <option value="client_visible">Visible to client</option>
+                                                                    <option value="client_invisible">Invisible to client</option>
+                                                                    <option value="delete">Delete files</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-2 text-right">
+                                                                <button class="btn btn-circle btn-md green">Save Action</button>
+                                                            </div>
+                                                            <?php endif; ?>
+                                                        </div>
+                                                        <div class="form-group" style="margin-top: 20px">
+                                                            <label for="">Cad</label>
+                                                            <div class="file-loading" id="krajee_file">
+                                                                <input id="file-1" type="file" multiple class="file" name="file[]">
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="form-group" style="margin-top: 20px">
+                                                            <label for="">Pic</label>
+                                                            <div class="file-loading" id="krajee_file">
+                                                                <input id="file-2" type="file" multiple class="file" name="file[]">
+                                                            </div>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <!-- end Upload Image -->
+
+                                    <?php if($client_approval): ?>
+
+                                    <!-- Print Porject -->
+                                    <div class="panel panel-default"  id="project_print">
+                                        <div class="panel-heading">
+                                            <button class="btn" type="button" data-toggle="collapse" data-target="#print_project" aria-expanded="true" aria-controls="multiCollapseExample2">Print Project</button>
+                                        </div>
+                                        <div class="collapse multi-collapse" id="print_project">
+                                             <style>
+                                            /*.print_table tr{
+                                            padding-bottom: 10px;
+                                            
+                                            }*/
+                                            .print_table {
+                                            border-collapse: collapse;
+                                            }
+                                            .print_table td {
+                                            padding: .2em;
+                                            }
+                                            </style>
+                                            
+                                            <div class="row" style="margin: 20px">
+                                                <div class="col-md-6">
+                                                    <form method="POST" id="update_print_project_form" action="<?php echo base_url('Project_controller/print_project_details')?>" target="_blank">
+                                                        <table class="print_table">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td>Created</td>
+                                                                    <td>
+                                                                        <!-- Monday, August 27, 2018 -->
+                                                                        <?php echo date('l, F d, Y', strtotime($project_details->created_at)) ?>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Client</td>
+                                                                    <td>
+                                                                        <?php
+                                                                        if ($project->assign_by != '') :
+                                                                            echo $this->db->get_where('user', ['id' => $project->assign_by])->row()->name;
+                                                                        endif;
+                                                                        ?><br>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Assignee</td>
+                                                                    <td>
+                                                                        <select name="project[assignee]" class="form-control">
+                                                                            <option value="">Set Assignee</option>
+                                                                            <?php foreach ($assignee as $key) : ?>
+                                                                            <option value="<?= $key->id ?>"
+                                                                                <?php if(isset($project_details->assignee)){
+                                                                                echo $project_details->assignee == $key->id ? 'selected' : '';
+                                                                                }
+                                                                                ?>
+
+                                                                                ><?= $key->name ?></option>
+                                                                            <?php endforeach; ?>
+                                                                        </select>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Disposition</td>
+                                                                    <td>
+                                                                        <select name="project[disposition]" class="form-control">
+                                                                            <option value="0">No Disposition Assigned</option>
+                                                                            <?php foreach ($disposition as $key) : ?>
+                                                                            <option value="<?= $key->disposition_id ?>"
+                                                                            <?php if(isset($project_details->disposition)){
+                                                                                echo $project_details->disposition == $key->disposition_id ? 'selected' : '';
+                                                                                }
+                                                                             ?>
+                                                                                ><?= $key->name ?></option>
+                                                                            <?php endforeach; ?>
+                                                                        </select>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Priority</td>
+                                                                    <td>
+                                                                        <select class="form-control" name="project[priority]">
+                                                                            <option value="3"
+                                                                            <?php if(isset($project_details->priority)){
+                                                                                echo $project_details->priority == '3' ? 'selected' : '';
+                                                                                }
+                                                                             ?>
+                                                                            >Standard Priority</option>
+                                                                            <option value="2"
+                                                                            <?php if(isset($project_details->priority)){
+                                                                                echo $project_details->priority == '2' ? 'selected' : '';
+                                                                                }
+                                                                             ?>
+                                                                             >High Priority</option>
+                                                                            <option value="1"
+                                                                            <?php if(isset($project_details->priority)){
+                                                                                echo $project_details->priority == '1' ? 'selected' : '';
+                                                                                }
+                                                                             ?>
+                                                                            >Critical</option>
+                                                                        </select>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Deadline</td>
+                                                                    <td>
+                                                                        <select name="project[deadline]" class="form-control">
+                                                                            <option value="">No Deadline</option>
+                                                                            <?php for ($i = 1; $i > -90; $i--) { ?>
+                                                                            <option value="<?= $deadline = date('Y-m-d', strtotime("-$i days")); ?>"
+                                                                                <?= $project_details->deadline == $deadline ? 'selected' : '' ?>>
+                                                                                <?= date('D, F d, Y', strtotime("-$i days")); ?></option>
+                                                                            <?php } ?>
+                                                                        </select>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Price</td>
+                                                                    <td>
+                                                                        <input type="number" class="form-control" name="project[price]" value="<?php echo isset($project_details->price) ? $project_details->price : ''?>">
+                                                                        <select class="form-control"  name="project[price_type]">
+                                                                            <option value="" selected disabled="">Select Price Type</option>
+                                                                            <option value="plus_tax" 
+                                                                            <?php if(isset($project_details->price_type)){
+                                                                                echo $project_details->price_type == 'plus_tax' ? 'selected' : '';
+                                                                                }
+                                                                             ?>>Plus Tax</option>
+                                                                            <option value="includes_tax" 
+                                                                            <?php if(isset($project_details->price_type)){
+                                                                                echo $project_details->price_type == 'includes_tax' ? 'selected' : '';
+                                                                            }
+                                                                             ?>>Includes Tax</option>
+                                                                            <option value="tax_exempt" 
+                                                                            <?php if(isset($project_details->price_type)){
+                                                                                echo $project_details->price_type == 'tax_exempt' ? 'selected' : '';
+                                                                            }
+                                                                             ?>>Tax Exempt</option>
+                                                                        </select>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>PO #</td>
+                                                                    <td>
+                                                                        <input type="text" class="form-control" name="project[po]" value="<?php echo isset($project_details->po) ? $project_details->po : ''?>">
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td>Tracking #</td>
+                                                                    <td>
+                                                                        <input type="text" class="form-control" name="project[tracking]"  value="<?php echo isset($project_details->tracking) ? $project_details->tracking : ''?>">
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td><button class="btn btn-circle btn-md green">Print</button>
+                                                                        <button type="button" value="<?php echo $project->project_id?>" id="update_print_project_btn" class="btn btn-circle btn-md green" style="margin-left: 10px">Save</button>
+                                                                    </td>
+                                                                </tr>
+                                                                <input type="hidden" name="project[project_id]" value="<?= $this->uri->segment(3); ?>">
+                                                            </tbody>
+                                                        </table>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                    <!-- end Print Porject -->
+
+                                    <?php endif; ?>
+
+                                     <!-- Activty Log Porject -->
+                                    <div class="panel panel-default">
+                                        <div class="panel-heading">
+                                            <button class="btn collapsed" type="button" data-toggle="collapse" data-target="#activity_log" aria-expanded="false">Activity Log</button>
+                                        </div>
+                                        
+                                        <div class="multi-collapse collapse" id="activity_log" aria-expanded="false" style="height: 0px;">
+                                            <table class="table table-borderless">
+                                                <thead>
+                                                    <th class="text-center">Last Updated</th>
+                                                    <th class="text-center">Updated At</th>
+                                                    <th>Updated By</th>
+                                                    <th>Update Type</th>
+                                                </thead>
+                                                <tbody>
+                                                    <?php foreach ($project_activity_log as $key) : ?>
+                                                    <tr>
+                                                        <td class="text-center"><?php echo time_elapsed_string(date('Y-M-d H:i:s', strtotime($key->created_at) + 5 * 3600 + 30*60)) ?></td>
+                                                        <td class="text-center"><?php echo date('m/d/Y h:i:s A', strtotime($key->created_at) + 5 * 3600 + 30*60) ?></td>
+                                                        <td><?php echo $this->db->get_where('user', ['id' => $key->user_id])->row()->name  ?></td>
+                                                        <td><?php
+                                                            // echo $key->activity_type ;
+                                                            if(in_array($key->activity_type, [12,13,14,15,16,31,32,33])):{
+                                                                echo "Project ".strtolower(str_replace('_', ' ', ($this->db->get_where('activity_type', ['activity_type_id' => $key->activity_type])->row()->activity_name)));
+                                                            }
+                                                            elseif(in_array($key->activity_type, [17,18,19,20,21])): {
+                                                                echo "Project ".strtolower(str_replace('_', ' ', ($this->db->get_where('activity_type', ['activity_type_id' => $key->activity_type])->row()->activity_name)))." specification updated";
+
+                                                            }
+                                                            elseif($key->activity_type == 30): {
+                                                                echo "Project ".strtolower(str_replace('_', ' ', ($this->db->get_where('activity_type', ['activity_type_id' => $key->activity_type])->row()->activity_name)))." added";
+
+                                                            }
+                                                            else: {
+                                                                echo "Project ".strtolower(str_replace('_', ' ', ($this->db->get_where('activity_type', ['activity_type_id' => $key->activity_type])->row()->activity_name)))." updated";
+                                                            }
+
+                                                            endif;
+                                                        ?></td>
+                                                    </tr>
+                                                    <?php endforeach; ?>
+                                                    <?php if (count($project_activity_log) == 0) : ?>
+                                                    <tr><td class="text-center">No activity yet</td></tr>
+                                                    <?php endif; ?>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <!-- end activity log -->
+                                </div>
+                                
+                               
+                                
+                            </div>
+                            <!-- END EXAMPLE TABLE PORTLET-->
+                        </div>
+                    </div>
+                </div>
+                <!-- END CONTENT BODY -->
+            </div>
+            <!-- END CONTENT -->
+        </div>
+        <!-- END CONTAINER -->
+        <!-- BEGIN FOOTER -->
+        <div class="page-footer">
+            <div class="page-footer-inner"> 2016 &copy; Metronic Theme By <a target="_blank" href="http://keenthemes.com">Keenthemes</a> &nbsp;|&nbsp; <a href="http://themeforest.net/item/metronic-responsive-admin-dashboard-template/4021469?ref=keenthemes" title="Purchase Metronic just for 27$ and get lifetime updates for free" target="_blank">Purchase Metronic!</a> </div>
+            <div class="scroll-to-top"> <i class="icon-arrow-up"></i> </div>
+        </div>
+        <!-- END FOOTER -->
+    </div>
+    <!-- modal -->
+    <div class="modal fade signup_pop" id="revision_history" tabindex="-1" role="dialog" aria-labelledby="exampleModalLongTitle" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"> </button>
+                </div>
+                <div class="modal-body text-center">
+                    <h4>Revision History</h4>
+                    <form method="post" action="<?php echo site_url('Master_controllers/insert_user');?>">
+                        <div class="inv_ppl">
+                            <h8>Currently</h8>
+                            <input style="text-align: center" type="text" value="<?= $project_details->description ?>" disabled>
+                        </div>
+                        <div class="inv_ppl">
+                            <h8>Historically</h8>
+                            <ul style="margin-top: 20px" class="list-group">
+                                <?php foreach ($project_description_history as $key) : ?>
+                                  <li class="list-group-item"><?php echo $key->description ?></li>
+                                <?php endforeach; ?>
+                            </ul>
+                        </div>
+                        <!-- <div class="tabgroup">
+                            <div class="pop_btn">
+                                <input type="submit" value="Submit">
+                                <input type="Reset" value="Cancel"> </div>
+                            </div> -->
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- disposition change modal -->
+        <div class="modal fade" id="change_disposition_modal" role="dialog">
+            <div class="modal-dialog">
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Modal Header</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form id="change_disposition_form" action="">
+                            <div class="form-group">
+                                <select name="project[disposition_id]" class="form-control" required="">
+                                    <option value="">No Disposition Assigned</option>
+                                    <?php foreach ($disposition as $key) : ?>
+                                    <option value="<?= $key->disposition_id ?>" <?= $project_details->disposition == $key->disposition_id ? 'selected' : ''?>><?= $key->name ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <input type="hidden" class="change_disposition_id" name="project[project_disposition_id]" value="">
+                            <div class="form-group">
+                                <button class="btn">Save</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        <!-- end disposition change modal -->
+        <!-- Image Gallery Modal -->
+        <div id="myModal" class="modal fade" role="dialog">
+            <div class="modal-dialog" style="width: 80%">
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Project Image Gallery</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Cad</h4>
+                                <?php foreach ($project_files as $key) : ?>
+                                    <?php  if ($key->type == 'cad') : ?>
+                                <a href="<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name ?>" data-fancybox="images" data-caption="Backpackers following a dirt trail">
+                                    <img src="<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name ?>" width="150" height="130"/>
+                                </a>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <h4>Pic</h4>
+                                <?php foreach ($project_files as $key) : ?>
+                                    <?php  if ($key->type == 'pic') : ?>
+                                <a href="<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name ?>" data-fancybox="images" data-caption="Backpackers following a dirt trail">
+                                    <img src="<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name ?>" width="150" height="130"/>
+                                </a>
+                                    <?php endif; ?>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- internal disposition change modal -->
+        <div class="modal fade" id="change_disposition_internal_modal" role="dialog">
+            <div class="modal-dialog">
+                <!-- Modal content-->
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        <h4 class="modal-title">Change Internal Disposition</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form id="change_disposition_internal_form" action="">
+                            <div class="form-group">
+                                <select name="project[disposition_id]" class="form-control" required="">
+                                    <option value="">No Disposition Assigned</option>
+                                    <?php foreach ($disposition as $key) : ?>
+                                    <option value="<?= $key->disposition_id ?>" <?= $project_details->disposition == $key->disposition_id ? 'selected' : ''?>><?= $key->name ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <input type="hidden" class="change_disposition_internal_id" name="project[project_disposition_id]" value="">
+                            <div class="form-group">
+                                <button class="btn">Save</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        <!-- end disposition change modal -->
+        <!-- Edit Image Modal -->
+        <div class="modal fade" id="editImgModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <!-- Modal Header -->
+                    <div class="modal-header">
+                        <h4 class="modal-title">Edit Image</h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <!-- Modal body -->
+                    <div class="modal-body">
+                        <form action="" id="edit_img_form">
+                            <div class="form-group">
+                                <input type="file" class="form-control" name="userfile" id="edit_file" required>
+                            </div>
+                            <div class="form-group">
+                                <button class="btn btn-primary">Save</button>
+                            </div>
+                            <input type="hidden" id="edit_img_id" value="">
+                        </form>
+                    </div>
+                    <!-- Modal footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- BEGIN CORE PLUGINS -->
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/js.cookie.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-slimscroll/jquery.slimscroll.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery.blockui.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/bootstrap-switch/js/bootstrap-switch.min.js" type="text/javascript"></script>
+        <!-- END CORE PLUGINS -->
+        <!-- BEGIN PAGE LEVEL PLUGINS -->
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/fancybox/source/jquery.fancybox.pack.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/vendor/jquery.ui.widget.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/vendor/tmpl.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/vendor/load-image.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/vendor/canvas-to-blob.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/blueimp-gallery/jquery.blueimp-gallery.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/jquery.iframe-transport.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/jquery.fileupload.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/jquery.fileupload-process.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/jquery.fileupload-image.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/jquery.fileupload-audio.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/jquery.fileupload-video.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/jquery.fileupload-validate.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-file-upload/js/jquery.fileupload-ui.js" type="text/javascript"></script>
+        <!-- END PAGE LEVEL PLUGINS -->
+        <!-- BEGIN THEME GLOBAL SCRIPTS -->
+        <script src="<?php echo base_url();?>assets/assets/global/scripts/app.min.js" type="text/javascript"></script>
+        <!-- END THEME GLOBAL SCRIPTS -->
+        <!-- BEGIN PAGE LEVEL SCRIPTS -->
+        <script src="<?php echo base_url();?>assets/assets/pages/scripts/form-fileupload.min.js" type="text/javascript"></script>
+        <!-- END PAGE LEVEL SCRIPTS -->
+        <!-- BEGIN THEME LAYOUT SCRIPTS -->
+        <script src="<?php echo base_url();?>assets/assets/layouts/layout/scripts/layout.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/layouts/layout/scripts/demo.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/layouts/global/scripts/quick-sidebar.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/layouts/global/scripts/quick-nav.min.js" type="text/javascript"></script>
+        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+        <!-- END THEME LAYOUT SCRIPTS -->
+        <script>
+        $(document).ready(function()
+        {
+            $('#clickmewow').click(function(){
+                $('#radio1003').attr('checked', 'checked');
+            });
+            // $(".file-input .file-caption").after("<select class='form-control file_input_type' style='width: 20%;''><option value='pic'>Pic</option><option value='cad'>Cad</option></select>")
+        })
+        </script>
+
+
+        <!-- <?php if($this->session->flashdata('proj_files')):
+            // header("Refresh:0");
+         ?>
+        <script>
+            $('#upload_img').collapse('show');
+        </script>
+        <?php endif; ?> -->
+        <!-- project title leng count -->
+        <script>
+        $(function(){
+            var job_title_cn = $('#job_title').val();
+                $('#job_title_cn').html(job_title_cn.length);
+                $(document).on('keyup', '#job_title', function(){
+                var max_input = 30;
+                var job_title_cn = $('#job_title').val();
+                if(job_title_cn.length <= max_input)
+                    $('#job_title_cn').html(job_title_cn.length);
+            });
+        });
+        </script>
+        <!-- message form submit -->
+        <script>
+        $(function(){
+            $(document).on('submit','#message_send',function(e){
+                e.preventDefault();
+                var form = $(this).serialize();
+                $.ajax({
+                    url: "<?= site_url('Project_controller/insert_msg') ?>",
+                    data: form,
+                    type: 'post',
+                    success:function(data){
+                        if(!$('#messaging').hasClass("show"))
+                            $('#messaging_id').trigger('click');
+                        $("#msg_tbody").html(data);
+                        $("input[name='msg']").val('');
+                        $("[name='msg_to']").val('');
+                        swal("Message added");
+                    }
+                });
+            });
+        });
+        </script>
+        <?php if ($this->session->flashdata('project_insert')) : ?>
+        <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+        <script>
+        jQuery.noConflict();
+        (function ($){
+            // swal("Good job!", "One Job Added", "success");
+            swal("Uploaded successfully")
+            .then((value) => {
+              window.location.href = "<?php echo base_url() ?>";
+            });
+
+            swal({
+              text: "Uploaded successfully",
+              buttons: true,
+              buttons: ["Cancel", "Go to dashboard"],
+            })
+            .then((willDelete) => {
+              if (willDelete) {
+                    window.location.href = "<?php echo base_url() ?>";
+              } else {
+              }
+            });
+        })(jQuery);
+        </script>
+        <?php endif; ?>
+        <script>
+        $(document).ready(function(){
+        $('#Add').click(function()
+        {
+        var disposition=$('#disposition').val();
+        var project_id='<?= $this->uri->segment(3); ?>';
+        if(disposition != 0){
+        $.ajax({
+        url: "<?= site_url('Project_controller/insert_disposition') ?>",
+        type: 'POST',
+        data: {'project_id':project_id,'disposition':disposition},
+        success:function(data){
+        if(data == 'false')
+        swal("Disposition already added", {
+        dangerMode: true,
+        });
+        else{
+        swal('Disposition Added');
+        $('#project_disposition_steps').html(data);
+        }
+        }
+        });
+        }
+        });
+        $(document).on('click', '.update_disposition', function(){
+        var project_disposition_id = $(this).val();
+        $.ajax({
+        url: "<?= site_url('Project_controller/update_disposition') ?>"+"/"+project_disposition_id,
+        success:function(data){
+        swal('Disposition Updated');
+        $('#project_disposition_steps').html(data);
+        }
+        });
+        });
+        $(document).on('click', '.change_disposition', function(){
+        var project_disposition_id = $(this).val();
+        $('.change_disposition_id').val(project_disposition_id);
+        });
+        $(document).on('click', '.delete_disposition', function(){
+        var project_disposition_id = $(this).val();
+        $.ajax({
+        url: "<?= site_url('Project_controller/delete_disposition') ?>"+"/"+project_disposition_id,
+        success:function(data){
+        // alert(data);
+        swal('Disposition Updated');
+        $('#project_disposition_steps').html(data);
+        }
+        });
+        
+        });
+        $(document).on('submit', '#change_disposition_form', function(e){
+        e.preventDefault();
+        var form = $(this).serialize();
+        $.ajax({
+        url: "<?= site_url('Project_controller/change_disposition') ?>",
+        data: form,
+        type: 'post',
+        success:function(data){
+        // alert(data);
+        $('#change_disposition_modal').modal('hide');
+        swal('Disposition Updated');
+        $('#project_disposition_steps').html(data);
+        }
+        });
+        });
+        $(document).on('click', '.revert', function(){
+        var project_disposition_id = $(this).val();
+        $.ajax({
+        url: "<?= site_url('Project_controller/revert_disposition') ?>"+"/"+project_disposition_id,
+        success:function(data){
+        swal('Disposition Updated');
+        $('#project_disposition_steps').html(data);
+        }
+        });
+        
+        });
+        })
+        </script>
+        <script>
+        $('[data-fancybox="images"]').fancybox({
+        buttons : [
+        'slideShow',
+        'share',
+        'zoom',
+        'fullScreen',
+        'close'
+        ],
+        thumbs : {
+        autoStart : true
+        }
+        });
+        </script>
+        <script>
+        $(document).ready(function(){
+        $('#add_disposition_internal').click(function()
+        {
+        var disposition=$('#disposition_internal').val();
+        var project_id='<?= $this->uri->segment(3); ?>';
+        if(disposition != 0){
+        $.ajax({
+        url: "<?= site_url('Project_controller/insert_disposition_internal') ?>",
+        type: 'POST',
+        data: {'project_id':project_id,'disposition':disposition},
+        success:function(data){
+        if(data == 'false')
+        swal("Disposition already added", {
+        dangerMode: true,
+        });
+        else{
+        swal('Disposition Added');
+        $('#project_disposition_internal_steps').html(data);
+        }
+        }
+        });
+        }
+        });
+        $(document).on('click', '.update_disposition_internal', function(){
+        var project_disposition_id = $(this).val();
+        $.ajax({
+        url: "<?= site_url('Project_controller/update_disposition_internal') ?>"+"/"+project_disposition_id,
+        success:function(data){
+        swal('Disposition Updated');
+        $('#project_disposition_internal_steps').html(data);
+        }
+        });
+        });
+        $(document).on('click', '.change_disposition_internal', function(){
+        var project_disposition_id = $(this).val();
+        $('.change_disposition_internal_id').val(project_disposition_id);
+        });
+        $(document).on('click', '.delete_disposition_internal', function(){
+        var project_disposition_id = $(this).val();
+        $.ajax({
+        url: "<?= site_url('Project_controller/delete_disposition_internal') ?>"+"/"+project_disposition_id,
+        success:function(data){
+        // alert(data);
+        swal('Disposition Updated');
+        $('#project_disposition_internal_steps').html(data);
+        }
+        });
+        
+        });
+        $(document).on('submit', '#change_disposition_internal_form', function(e){
+        e.preventDefault();
+        var form = $(this).serialize();
+        $.ajax({
+        url: "<?= site_url('Project_controller/change_disposition_internal') ?>",
+        data: form,
+        type: 'post',
+        success:function(data){
+        // alert(data);
+        $('#change_disposition_internal_modal').modal('hide');
+        swal('Disposition Updated');
+        $('#project_disposition_steps').html(data);
+        }
+        });
+        });
+        $(document).on('click', '.revert_internal', function(){
+        var project_disposition_id = $(this).val();
+        $.ajax({
+        url: "<?= site_url('Project_controller/revert_disposition_internal') ?>"+"/"+project_disposition_id,
+        success:function(data){
+        swal('Disposition Updated');
+        $('#project_disposition_internal_steps').html(data);
+        }
+        });
+        
+        });
+        })
+        </script>
+        <!-- image submit -->
+        <script>
+        $("#img_submit").submit(function(e){
+        e.preventDefault();
+        var fd = new FormData(this);
+        var files = $('#project_file')[0].files[0];
+        var project_id = $('#project_id').val();
+        fd.append('file',files);
+        fd.append('project_id', project_id);
+        $.ajax({
+        url: "<?php echo base_url('Project_controller/add_project_files')?>",
+        type: 'post',
+        data: fd,
+        contentType: false,
+        processData: false,
+        success:function(data){
+        // alert(data);
+        if(data != 6){
+        alert(data);
+        }else{
+        swal('One image added');
+        }
+        $("#img_lists").load(location.href + " #img_lists>*","");
+        }
+        });
+        });
+        $("#edit_img_form").submit(function(e){
+        e.preventDefault();
+        var fd = new FormData(this);
+        var files = $('#edit_file')[0].files[0];
+        var edit_img_id = $('#edit_img_id').val();
+        fd.append('file',files);
+        fd.append('project_files_id', edit_img_id);
+        $.ajax({
+        url: "<?php echo base_url('Project_controller/edit_project_files')?>",
+        type: 'post',
+        data: fd,
+        contentType: false,
+        processData: false,
+        success:function(data){
+        if(data != 1){
+        alert(data);
+        }
+        else{
+        $("#editImgModal").modal('hide');
+        }
+        $("#img_lists").load(location.href + " #img_lists>*","");
+        }
+        });
+        });
+        $(document).on('click', '.edit_img_btn', function(){
+        var img_id = $(this).val();
+        $('#edit_img_id').val(img_id);
+        });
+        $(document).on('click', '.img_delete', function(){
+        var img_id = $(this).val();
+        $.ajax({
+        url: "<?php echo base_url('Project_controller/delete_project_files')?>"+"/"+img_id,
+        success:function(data){
+        // alert(data);
+        swal('One image deleted');
+        $("#img_lists").load(location.href + " #img_lists>*","");
+        }
+        });
+        });
+        </script>
+
+        <script>
+            $(document).on('click', '#print_job_sheet', function(){
+                $('#print_project').collapse('show');
+            });
+        </script>
+
+        <script>
+            $('#print_project').collapse('show');
+            $(document).on('click', '#update_print_project_btn', function(){
+                var form = $('#update_print_project_form').serialize();
+                var project_id = $(this).val();
+                $.ajax({
+                    url: '<?php echo base_url('Project_controller/update_print_project_details')?>',
+                    data: form,
+                    type: 'post',
+                    success:function(data) {
+                        // alert(data);
+                        swal('Updated');
+                    }
+
+                });
+            });
+        </script>
+
+        <?php if(isset($_SERVER['HTTP_REFERER'])): ?>
+        <?php if($_SERVER['HTTP_REFERER']  == base_url('Master_controllers/dashboard')): ?>
+        <script>
+            $('#messaging').collapse('show');
+        </script>
+        <?php endif; ?>
+        <?php endif; ?>
+
+
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.0.1/js/plugins/piexif.min.js" type="text/javascript"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.0.1/js/plugins/sortable.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url('assets/file_input/fileinput.js')?>" type="text/javascript"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.0.1/themes/fas/theme.min.js" type="text/javascript"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-fileinput/5.0.1/themes/explorer-fas/theme.min.js" type="text/javascript"></script>
+        <script>
+            jQuery.noConflict();
+
+            (function($){
+                // var type = $('.file_input_type').val();
+                // var type = document.getElementByClassName('.file_input_type');
+                // $(document).on('change', '.file_input_type', function(){
+                //     var type = $(this).val();
+                //     alert(type);
+                // });
+                // alert(type);
+                $("#file-1").fileinput({
+                    theme: 'explorer-fas',
+                    uploadUrl:  "<?php echo base_url('Project_controller/krajee_upload/'.$project->project_id.'/')?>"+"/"+'cad',
+                    uploadAsync: true,
+                    overwriteInitial: false,
+                    fileActionSettings: {
+                        showDrag: false,
+                    },
+                    minFileCount: 1,
+                    maxFileCount: 5,
+                    initialPreviewShowDelete: false,
+                    initialPreviewAsData: true, // identify if you are sending preview data only and not the markup
+                    initialPreview: [
+                        <?php foreach ($project_files as $key) : ?>
+                        <?php if($key->type == 'cad'): ?>
+                        <?php $assign_by = $this->db->get_where('project', ['project_id' => $key->project_id])->row()->assign_by; ?>
+                            <?php if($client_approval): ?>
+                            "<input class='proj_img_chk'  name='project_files_id[]' value='<?php echo $key->project_files_id?>' type='checkbox'><img class='proj_img' src='<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name?>' alt=''>",
+                            <?php else: ?>
+                                <?php if($key->user_id == $assign_by): ?>
+                                "<img class='proj_img' src='<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name?>' alt=''>",
+                                <?php endif; ?>
+                                <?php if($key->user_id != $assign_by && $key->client_approval == 1): ?>
+                                "<img class='proj_img' src='<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name?>' alt=''>",
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        <?php endforeach; ?>
+                    ],
+                    // initialPreviewFileType: 'image', // image is the default and can be overridden in config below
+                    // allowedFileExtensions: ["jpg", "png", "gif", "pdf", "cad", "php", "csv", "xlxs", "xlx", "doc", "docx"],
+                    initialPreviewConfig: [
+                        <?php foreach ($project_files as $key) : ?>
+                        <?php $proj_files_user = $this->db->get_where('user', ['id' => $key->user_id])->row(); ?>
+                        <?php $proj_files_user_des = $this->db->get_where('designation', ['designation_id' => $proj_files_user->designation_id])->row(); ?>
+                        <?php if($key->type == 'cad'): ?>
+                        {type: "html", caption: "<?php if($client_approval): ?><span class='label label-sm label-success'><?php echo $proj_files_user->name ?></span> <span class='label label-sm label-success'><?php echo $proj_files_user_des->designation_name ?></span> <span class='label label-sm label-success'><?php echo $key->client_approval == 1 ? 'Visible' : 'Hidden' ?></span> <span class='label label-sm label-success'><?php echo $key->type ?></span> <span class='label label-sm label-success'><?php echo date('m-d-y H:i:s',strtotime($key->created_at)) ?></span><?php endif; ?><br> <?= $key->file_name ?>", downloadUrl: "<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name?>", 
+                        width: "120px", 
+                        url: "<?= base_url('Project_controller/delete_krajee_img/'.$key->project_files_id) ?>", key: <?= $key->project_files_id ?>}, 
+                        <?php endif; ?>
+                        <?php endforeach; ?>
+                    ]
+                });
+
+                $('#file-1').on('fileuploaded', function(event, previewId, index, fileId) {
+                    setTimeout(function(){
+                       <?php //$this->session->set_flashdata('proj_files', 'ok'); ?>
+                       location.reload(true);
+                       // // $("#upload_img").load(location.href+" #upload_img>*","");
+                       // // alert('da');
+                    }, 2000);
+                });
+
+                $("#file-2").fileinput({
+                    theme: 'explorer-fas',
+                    uploadUrl:  "<?php echo base_url('Project_controller/krajee_upload/'.$project->project_id.'/')?>"+"/"+'pic',
+                    uploadAsync: true,
+                    overwriteInitial: false,
+                    fileActionSettings: {
+                        showDrag: false,
+                    },
+                    minFileCount: 1,
+                    maxFileCount: 5,
+                    initialPreviewShowDelete: false,
+                    initialPreviewAsData: true, // identify if you are sending preview data only and not the markup
+                    initialPreview: [
+                        <?php foreach ($project_files as $key) : ?>
+                        <?php if($key->type == 'pic'): ?>
+                        <?php $assign_by = $this->db->get_where('project', ['project_id' => $key->project_id])->row()->assign_by; ?>
+                            <?php if($client_approval): ?>
+                            "<input class='proj_img_chk'  name='project_files_id[]' value='<?php echo $key->project_files_id?>' type='checkbox'><img class='proj_img' src='<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name?>' alt=''>",
+                            <?php else: ?>
+                                <?php if($key->user_id == $assign_by): ?>
+                                "<img class='proj_img' src='<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name?>' alt=''>",
+                                <?php endif; ?>
+                                <?php if($key->user_id != $assign_by && $key->client_approval == 1): ?>
+                                "<img class='proj_img' src='<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name?>' alt=''>",
+                                <?php endif; ?>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                        <?php endforeach; ?>
+                    ],
+                    // initialPreviewFileType: 'image', // image is the default and can be overridden in config below
+                    // allowedFileExtensions: ["jpg", "png", "gif", "pdf", "cad", "php", "csv", "xlxs", "xlx", "doc", "docx"],
+                    initialPreviewConfig: [
+                        <?php foreach ($project_files as $key) : ?>
+                        <?php $proj_files_user = $this->db->get_where('user', ['id' => $key->user_id])->row(); ?>
+                        <?php $proj_files_user_des = $this->db->get_where('designation', ['designation_id' => $proj_files_user->designation_id])->row(); ?>
+                        <?php if($key->type == 'pic'): ?>
+                        {type: "html", caption: "<?php if($client_approval): ?><span class='label label-sm label-success'><?php echo $proj_files_user->name ?></span> <span class='label label-sm label-success'><?php echo $proj_files_user_des->designation_name ?></span> <span class='label label-sm label-success'><?php echo $key->client_approval == 1 ? 'Visible' : 'Hidden' ?></span> <span class='label label-sm label-success'><?php echo $key->type ?></span> <span class='label label-sm label-success'><?php echo date('m-d-y H:i:s',strtotime($key->created_at)) ?></span><?php endif; ?><br> <?= $key->file_name ?>", downloadUrl: "<?= 'https://dn95g1jn6e80y.cloudfront.net/'.$key->file_name?>", 
+                        width: "120px", 
+                        url: "<?= base_url('Project_controller/delete_krajee_img/'.$key->project_files_id) ?>", key: <?= $key->project_files_id ?>}, 
+                        <?php endif; ?>
+                        <?php endforeach; ?>
+                    ]
+                });
+
+               $('#file-2').on('fileuploaded', function(event, previewId, index, fileId) {
+                    setTimeout(function(){
+                       <?php //$this->session->set_flashdata('proj_files', 'ok'); ?>
+                       location.reload(true);
+                       // // $("#upload_img").load(location.href+" #upload_img>*","");
+                       // // alert('da');
+                    }, 2000);
+                });
+            })(jQuery);
+        </script>
+
+        <script>
+            $('#reply_send').hide();
+
+            $(document).on('click', '.reply', function(){
+                var project_msg_id = $(this).val();
+                $('#message_send').hide();
+                $('#reply_send').show();
+                $("#project_msg_id").val(project_msg_id);
+
+                $('#create_msg').collapse('show');
+
+            });
+            $(document).on('click', '#reply_btn', function(){
+                $('#message_send').show();
+                $('#reply_send').hide();
+            });
+        </script>
+
+        <script>
+        $(function(){
+            $(document).on('submit','#reply_send',function(e){
+                e.preventDefault();
+                var form = $(this).serialize();
+                $.ajax({
+                    url: "<?= site_url('Project_controller/insert_reply') ?>",
+                    data: form,
+                    type: 'post',
+                    success:function(data){
+                        // alert(data);
+                        // if(!$('#messaging').hasClass("show"))
+                        //     $('#messaging_id').trigger('click');
+                        $("#msg_tbody").html(data);
+                        // $("input[name='msg']").val('');
+                        // $("[name='msg_to']").val('');
+                        swal("Message added");
+                    }
+                });
+            });
+        });
+        </script>
+    </body>
+</html>

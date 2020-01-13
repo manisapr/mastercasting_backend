@@ -1,0 +1,815 @@
+
+            <!-- BEGIN HEADER -->
+            <?php include 'inc/header.php'; ?>
+            <link href='<?php echo base_url('assets/fullcalendar/packages/core/main.css')?>' rel='stylesheet' />
+            <link href='<?php echo base_url('assets/fullcalendar/packages/daygrid/main.css')?>' rel='stylesheet' />
+            <?php  
+            $designation_id=$this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id; 
+            $designation_name = $this->db->get_where('designation', ['designation_id' => $designation_id])->row()->designation_name;
+            ?>
+            <?php date_default_timezone_set('America/Chicago'); ?>
+            <!-- END HEADER -->
+            <!-- BEGIN HEADER & CONTENT DIVIDER -->
+            <div class="clearfix"> </div>
+            <!-- END HEADER & CONTENT DIVIDER -->
+            <!-- BEGIN CONTAINER -->
+            <div class="page-container" id="dashboard-content">
+                <!-- BEGIN SIDEBAR -->
+                <?php include 'inc/sidebar.php'; ?>
+                <!-- END SIDEBAR -->
+                <!-- BEGIN CONTENT -->
+                <div class="page-content-wrapper">
+                    <!-- BEGIN CONTENT BODY -->
+                    <div class="page-content">
+                        <!-- BEGIN PAGE HEADER-->
+                        <!-- BEGIN PAGE BAR -->
+                        <div class="page-bar">
+                            <ul class="page-breadcrumb">
+                                <li>
+                                    <a href="<?php echo base_url()?>">Home</a>
+                                    <i class="fa fa-circle"></i>
+                                </li>
+                                <li>
+                                    <span>Dashboard</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- END PAGE BAR -->
+                        <!-- BEGIN PAGE TITLE-->
+                        <h1 class="page-title"><?php echo ucwords(strtolower($designation_name)) ?> Dashboard
+                            <small>statistics, charts, recent events and reports</small>
+                        </h1>
+                        <!-- END PAGE TITLE-->
+                        <!-- END PAGE HEADER-->
+                        <!-- BEGIN DASHBOARD STATS 1-->
+                        
+                       
+                        
+                        <div class="row">
+                            <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                                <a class="dashboard-stat dashboard-stat-v2 blue" href="<?php echo site_url('projects/all_projects'); ?>">
+                                    <div class="visual">
+                                        <i class="fa fa-comments"></i>
+                                    </div>
+                                    <div class="details">
+                                        <div class="number">
+                                            <span data-counter="counterup" data-value="<?php echo $all_project_cnt ?>"><?php echo $all_project_cnt ?></span>
+                                        </div>
+                                        <div class="desc"> All Projects </div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                                <a class="dashboard-stat dashboard-stat-v2 red" href="<?php echo site_url('projects/live_projects'); ?>">
+                                    <div class="visual">
+                                        <i class="fa fa-bar-chart-o"></i>
+                                    </div>
+                                    <div class="details">
+                                        <div class="number">
+                                            <span data-counter="counterup" data-value="<?php echo $live_project_cnt ?>"><?php echo $live_project_cnt ?></span> </div>
+                                        <div class="desc"> Live Projects </div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                                <a class="dashboard-stat dashboard-stat-v2 green" href="<?php echo site_url('projects/complete_projects'); ?>">
+                                    <div class="visual">
+                                        <i class="fa fa-shopping-cart"></i>
+                                    </div>
+                                    <div class="details">
+                                        <div class="number">
+                                            <span data-counter="counterup" data-value="<?php echo $completed_project_cnt ?>"><?php echo $completed_project_cnt ?></span>
+                                        </div>
+                                        <div class="desc"> Complete Projects </div>
+                                    </div>
+                                </a>
+                            </div>
+                            <div class="col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                                <a class="dashboard-stat dashboard-stat-v2 purple" href="<?php echo site_url('projects/cancel_projects'); ?>">
+                                    <div class="visual">
+                                        <i class="fa fa-globe"></i>
+                                    </div>
+                                    <div class="details">
+                                        <div class="number"> 
+                                            <span data-counter="counterup" data-value="<?php echo $cancelled_project_cnt ?>"><?php echo $cancelled_project_cnt ?></span></div>
+                                        <div class="desc"> Cancel Projects </div>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                        
+                       
+                        
+                        
+                        <div class="clearfix"></div>
+                        <!-- END DASHBOARD STATS 1-->
+                        
+                        <div class="row">
+                            <?php if ($client_approval) : ?>
+                            <div class="col-lg-6 col-xs-12 col-sm-12">
+                                <div class="portlet light bordered">
+                                    <div class="portlet-title tabbable-line">
+                                        <div class="caption">
+                                            <i class="icon-bubbles font-dark hide"></i>
+                                            <span class="caption-subject font-dark bold uppercase">Projects</span>
+                                        </div>
+                                        <ul class="nav nav-tabs">
+                                            <li class="active">
+                                                <a href="#portlet_comments_1" data-toggle="tab" aria-expanded="true"> Proposal </a>
+                                            </li>
+                                            <?php if(in_array($designation_id, [1,6,8])): ?>
+                                            <li class="">
+                                                <a href="#portlet_comments_2" data-toggle="tab" aria-expanded="false"> Inactive </a>
+                                            </li>
+                                            <?php endif; ?>
+                                        </ul>
+                                    </div>
+                                    <div class="portlet-body" style="height: 600px;">
+                                        <div class="tab-content">
+                                            <div class="tab-pane active" id="portlet_comments_1" >
+                                                <!-- BEGIN: Comments -->
+                                                <?php foreach ($proposal_projects as $key) : ?>
+                                                <?php
+                                                $asign_user = $this->db->get_where('project', ['project_id' => $key->project_id])->row()->asign_user; 
+                                                $company_name = '';
+
+                                                if($asign_user != 0){
+                                                    $asign_user = $this->db->get_where('user', ['id' => $asign_user])->row();
+                                                    if($asign_user->designation_id == 7)
+                                                        $company_name = $asign_user->company_name;
+                                                }
+                                                ?>
+                                                <div class="mt-comments">
+                                                    <div class="mt-comment">
+                                                        <!-- <div class="mt-comment-img">
+                                                        <img src="../assets/pages/media/users/avatar1.jpg"> </div> -->
+                                                        <div class="mt-comment-body">
+                                                            <div class="mt-comment-info">
+                                                                <a href="<?= site_url('projects/project_details/'.$key->project_id) ?>">
+                                                                    <span class="mt-comment-author"><?= 'J'.$key->project_id.' '. $key->title.'- ('.$company_name.')' ?></span>
+                                                                </a>
+                                                                <span class="mt-comment-date"> <?= date_convert(date('d-m-Y H:i:s', strtotime($key->created_at)), 'd M H:i');  ?></span>
+                                                            </div>
+                                                            <div class="mt-comment-text"><?=  strlen($key->description) > 50 ? substr($key->description,0,50)."..." : $key->description; ?></div>
+                                                            <div class="mt-comment-details">
+                                                                <span class="mt-comment-status mt-comment-status-pending">
+                                                                    Proposal 
+                                                                    <?php 
+                                                                    switch ($key->priority) {
+                                                                        case 'critical':
+                                                                            $priority = $key->priority;
+                                                                            $priority_class = 'text-danger';
+                                                                            break;
+                                                                        case 'high':
+                                                                            $priority = 'rush';
+                                                                            $priority_class = 'text-warning';
+                                                                            break;
+                                                                        case 'standard':
+                                                                            $priority = $key->priority;
+                                                                            $priority_class = 'text-success';
+                                                                            break;
+                                                                        default:
+                                                                            # code...
+                                                                            break;
+                                                                    }
+                                                                     ?>
+                                                                    <b><span class="<?php echo $priority_class ?>"><?php echo $priority ?></span></b>
+                                                                </span>
+                                                                <ul class="mt-comment-actions">
+                                                                    <li>
+                                                                        <a href="<?= site_url('projects/update_project_type/approve/'.$key->project_id)?>">Approve</a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <a href="<?= site_url('projects/update_project_type/reject/'.$key->project_id)?>">Reject</a>
+                                                                    </li>
+                                                                    <!-- <li>
+                                                                        <a href="">Redo</a>
+                                                                    </li> -->
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <?php endforeach; ?>
+                                                
+                                                <!-- END: Comments -->
+                                            </div>
+                                            <?php if(in_array($designation_id, [1,6,8])): ?>
+                                            <div class="tab-pane" id="portlet_comments_2">
+                                                <!-- BEGIN: Comments -->
+                                                <?php foreach ($inactive_projects as $key) : ?>
+                                                <?php
+                                                $asign_user = $this->db->get_where('project', ['project_id' => $key->project_id])->row()->asign_user; 
+                                                $company_name = '';
+
+                                                if($asign_user != 0){
+                                                    $asign_user = $this->db->get_where('user', ['id' => $asign_user])->row();
+                                                    if($asign_user->designation_id == 7)
+                                                        $company_name = $asign_user->company_name;
+                                                }
+                                                ?>
+                                                <div class="mt-comments">
+                                                    <div class="mt-comment">
+                                                        <!-- <div class="mt-comment-img">
+                                                        <img src="../assets/pages/media/users/avatar1.jpg"> </div> -->
+                                                        <div class="mt-comment-body">
+                                                            <div class="mt-comment-info">
+                                                                <a href="<?= site_url('projects/project_details/'.$key->project_id) ?>">
+                                                                    <span class="mt-comment-author"><?= 'J'.$key->project_id.' '. $key->title.'- ('.$company_name.')' ?></span>
+                                                                </a>
+                                                                <span class="mt-comment-date"> <?= date_convert(date('d-m-Y H:i:s', strtotime($key->created_at)), 'd M H:i');  ?></span>
+                                                            </div>
+                                                            <div class="mt-comment-text"><?=  strlen($key->description) > 50 ? substr($key->description,0,50)."..." : $key->description; ?></div>
+                                                            <div class="mt-comment-details">
+                                                                <span class="mt-comment-status mt-comment-status-pending">Proposal</span>
+                                                                <ul class="mt-comment-actions">
+                                                                    <li>
+                                                                        <a href="<?= site_url('projects/update_project_type/approve/'.$key->project_id)?>">Approve</a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <a href="<?= site_url('projects/update_project_type/reject/'.$key->project_id)?>">Reject</a>
+                                                                    </li>
+                                                                    <!-- <li>
+                                                                        <a href="">Redo</a>
+                                                                    </li> -->
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <?php endforeach; ?>
+                                                
+                                                <!-- END: Comments -->
+                                            </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+    
+                            <div class="col-lg-6 col-xs-12 col-sm-12">
+                                <div class="portlet light bordered">
+                                    <div class="portlet-title tabbable-line">
+                                        <div class="caption">
+                                            <i class="icon-bubbles font-dark hide"></i>
+                                            <span class="caption-subject font-dark bold uppercase">Messages</span>
+                                        </div>
+                                        <ul class="nav nav-tabs">
+                                            <li class="active">
+                                                <a href="#message_tab" data-toggle="tab" aria-expanded="true"> Messages </a>
+                                            </li>
+                                            <li class="">
+                                                <a href="#reply_tab" data-toggle="tab" aria-expanded="false"> Replies </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="portlet-body" style="height: 250px;">
+                                        <div class="tab-content">
+                                            <div class="tab-pane active" id="message_tab">
+                                                <!-- BEGIN: Comments -->
+                                                <div class="mt-comments">
+
+                                                    <?php foreach ($project_msg as $key) : ?>
+                                                    <div class="mt-comment">
+                                                        <div class="mt-comment-body">
+                                                            <div class="mt-comment-info">
+                                                                <a href="<?= site_url('projects/project_details/'.$key->project_id.'#message_panel') ?>">
+                                                                    <span class="mt-comment-author">
+                                                                        <?= 'J'.$key->project_id.' '.$this->db->get_where('project_details', ['project_id' => $key->project_id])->row()->title  ?>
+                                                                        (<?php 
+                                                                            if(in_array($designation_id, [5,7])){
+                                                                            $msg_by_des = $this->db->get_where('user', ['id' => $key->msg_by])->row()->designation_id;
+                                                                            if($msg_by_des == 9){
+                                                                                echo 'Cad Team'  ?> - <?php echo $key->msg_to != '' ? $this->db->get_where('user', ['id' => $key->msg_to])->row()->name : '';
+                                                                            } else{
+                                                                                echo $key->msg_by != '' ? $this->db->get_where('user', ['id' => $key->msg_by])->row()->name : ''  ?> - <?php echo $key->msg_to != '' ? $this->db->get_where('user', ['id' => $key->msg_to])->row()->name : '';
+                                                                            }
+
+                                                                            }else{
+
+                                                                                echo $key->msg_by != '' ? $this->db->get_where('user', ['id' => $key->msg_by])->row()->name : ''  ?> - <?php echo $key->msg_to != '' ? $this->db->get_where('user', ['id' => $key->msg_to])->row()->name : '';   
+                                                                            }
+                                                                        ?>) 
+
+                                                                    </span>
+                                                                </a>
+                                                                <span class="mt-comment-date"><?= date_convert(date('d-m-Y h:i A', strtotime($key->created_at)), 'd M, Y h:i A');  ?></span>
+                                                            </div>
+                                                            <div class="mt-comment-text"> <?= $key->msg ?> </div>
+                                                            <div class="mt-comment-details">
+                                                                <ul class="mt-comment-actions">
+                                                                    <li>
+                                                                        <a class="seen_msg" data-id="<?= $key->project_msg_id ?>">Seen</a>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <?php endforeach; ?>
+                                                    <?php if (count($project_msg) == 0) : ?>
+                                                    <div class="mt-comment text-center">Empty</div>
+                                                    <?php endif ?>
+                                                </div>
+                                                <!-- END: Comments -->
+                                            </div>
+                                            <div class="tab-pane" id="reply_tab">
+                                                <!-- BEGIN: Comments -->
+                                                <div class="mt-comments">
+                                                    <?php foreach ($project_replies as $key) : ?>
+                                                    <div class="mt-comment">
+                                                        <div class="mt-comment-body">
+                                                            <div class="mt-comment-info">
+                                                                <a href="<?= site_url('projects/project_details/'.$key->project_id.'#message_panel') ?>">
+                                                                    <span class="mt-comment-author">
+                                                                        <?= 'J'.$key->project_id.' '.$this->db->get_where('project_details', ['project_id' => $key->project_id])->row()->title  ?>
+                                                                        (<?php 
+                                                                            if(in_array($designation_id, [5,7])){
+                                                                            $msg_by_des = $this->db->get_where('user', ['id' => $key->msg_to])->row()->designation_id;
+                                                                                if($msg_by_des == 9){
+                                                                                    echo 'Cad Team' ?> - <?php echo $key->msg_by != '' ? $this->db->get_where('user', ['id' => $key->msg_by])->row()->name : '' ;
+                                                                                } else{
+                                                                                    echo $key->msg_to != '' ? $this->db->get_where('user', ['id' => $key->msg_to])->row()->name : '' ?> - <?php echo $key->msg_by != '' ? $this->db->get_where('user', ['id' => $key->msg_by])->row()->name : '';
+                                                                                }
+
+                                                                            }else{
+
+                                                                                echo  $key->msg_to != '' ? $this->db->get_where('user', ['id' => $key->msg_to])->row()->name : '' ?> - <?php echo $key->msg_by != '' ? $this->db->get_where('user', ['id' => $key->msg_by])->row()->name : '';   
+                                                                            }
+                                                                        ?>) 
+
+                                                                    </span>
+                                                                </a>
+                                                                <span class="mt-comment-date"><?= date_convert(date('d-m-Y h:i A', strtotime($key->created_at)), 'd M, Y h:i A');  ?></span>
+                                                            </div>
+                                                            <div class="mt-comment-text"> <?= $key->reply ?> </div>
+                                                            <div class="mt-comment-details">
+                                                                <ul class="mt-comment-actions">
+                                                                    <li>
+                                                                        <a class="seen_reply" data-id="<?= $key->project_msg_id ?>">Seen</a>
+                                                                    </li>
+                                                                </ul>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <?php endforeach; ?>
+                                                    <?php if (count($project_msg) == 0) : ?>
+                                                    <div class="mt-comment text-center">Empty</div>
+                                                    <?php endif ?>
+                                                </div>
+                                                <!-- END: Comments -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="portlet light bordered">
+                                    <div class="portlet-title tabbable-line">
+                                        <div class="caption">
+                                            <i class="icon-bubbles font-dark hide"></i>
+                                            <span class="caption-subject font-dark bold uppercase">Deadline</span>
+                                        </div>
+                                    </div>
+                                    <div class="portlet-body" style="height: 250px; overflow-y: scroll;">
+                                        <div class="tab-content">
+                                            <!-- BEGIN: Comments -->
+                                            <div class="mt-comments">
+                                                <?php foreach ($deadline_projects as $key) : ?>
+                                                <div class="mt-comment">
+                                                    <!-- <div class="mt-comment-img">
+                                                    <img src="../assets/pages/media/users/avatar1.jpg"> </div> -->
+                                                    <div class="mt-comment-body">
+                                                        <div class="mt-comment-info">
+                                                            <a href="<?= site_url('projects/project_details/'.$key->project_id)?>">
+                                                                <span class="mt-comment-author"><?= 'J'.$key->project_id.' '.$key->title?></span>
+                                                            </a>
+                                                            <span class="mt-comment-date">Created at <?= date_convert(date('d-m-Y H:i:s', strtotime($key->created_at)), 'd M, Y h:i A');  ?></span>
+                                                        </div>
+                                                        <div class="<?= date('Y-m-d') > $key->deadline ? 'text-danger' : 
+                                                        'text-warning'?>">Deadline date - <?= date('d M, Y', strtotime($key->deadline))  ?></div>
+                                                    </div>
+                                                </div>
+                                                <?php endforeach; ?>
+                                                <?php if (count($deadline_projects) == 0) : ?>
+                                                <div class="mt-comment text-center">Empty</div>
+                                                <?php endif ?>
+                                            </div>
+                                            <!-- END: Comments -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <?php if ($client_approval) : ?>
+                            <div class="col-lg-6 col-xs-12 col-sm-12">
+                                <div class="portlet light bordered">
+                                    <div class="portlet-title tabbable-line">
+                                        <div class="caption">
+                                            <i class="icon-bubbles font-dark hide"></i>
+                                            <span class="caption-subject font-dark bold uppercase">Projects Description History</span>
+                                        </div>
+                                        <!-- <ul class="nav nav-tabs">
+                                            <li class="active">
+                                                <a href="#portlet_comments_1" data-toggle="tab"> Pending </a>
+                                            </li>
+                                            <li>
+                                                <a href="#portlet_comments_2" data-toggle="tab"> Approved </a>
+                                            </li>
+                                        </ul> -->
+                                    </div>
+                                    <div class="portlet-body" style="height: 300px; overflow-y: scroll;">
+                                        <div class="tab-content">
+                                            <!-- BEGIN: Comments -->
+                                            <?php foreach ($project_description_history as $key) : ?>
+                                                <?php $project_desc = $this->db->get_where('project_details', ['project_id' => $key->project_id])->row() ?>
+                                            <div class="mt-comments">
+                                                <div class="mt-comment">
+                                                    <!-- <div class="mt-comment-img">
+                                                    <img src="../assets/pages/media/users/avatar1.jpg"> </div> -->
+                                                    <div class="mt-comment-body">
+                                                        <div class="mt-comment-info">
+                                                            <a href="<?= site_url('projects/project_details/'.$key->project_id) ?>">
+                                                                <span class="mt-comment-author"><?= 'J'.$key->project_id.' '.$project_desc->title ?></span>
+                                                            </a>
+                                                            <span class="mt-comment-date">Updated at <?= date_convert(date('d-m-Y H:i:s', strtotime($key->created_at)), 'd M, Y h:i A'); ?></span>
+                                                        </div>
+                                                        <!-- <div class="mt-comment-text"><?=  strlen($key->description) > 50 ? substr($key->description,0,50)."..." : $key->description; ?></div> -->
+                                                        <div class="mt-comment-text">Description changed</div>
+                                                        <div class="mt-comment-details">
+                                                            <!-- <span class="mt-comment-status mt-comment-status-pending">Proposal</span> -->
+                                                            <ul class="mt-comment-actions">
+                                                                <li>
+                                                                    <a href="<?= site_url('Project_controller/approve_desc/'.$key->project_description_history_id)?>">Approve</a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <?php endforeach; ?>
+
+                                            <!-- END: Comments -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-xs-12 col-sm-12">
+                                <div class="portlet light bordered">
+                                    <div class="portlet-title tabbable-line">
+                                        <div class="caption">
+                                            <i class="icon-bubbles font-dark hide"></i>
+                                            <span class="caption-subject font-dark bold uppercase">Estimated Project</span>
+                                        </div>
+                                        <!-- <ul class="nav nav-tabs">
+                                            <li class="active">
+                                                <a href="#portlet_comments_1" data-toggle="tab"> Pending </a>
+                                            </li>
+                                            <li>
+                                                <a href="#portlet_comments_2" data-toggle="tab"> Approved </a>
+                                            </li>
+                                        </ul> -->
+                                    </div>
+                                    <div class="portlet-body" style="height: 300px; overflow-y: scroll;">
+                                        <div class="tab-content">
+                                            <!-- BEGIN: Comments -->
+                                            <?php foreach ($estimated_projects as $key) : ?>
+                                            <div class="mt-comments">
+                                                <div class="mt-comment">
+                                                    <!-- <div class="mt-comment-img">
+                                                    <img src="../assets/pages/media/users/avatar1.jpg"> </div> -->
+                                                    <div class="mt-comment-body">
+                                                        <div class="mt-comment-info">
+                                                            <a href="<?= site_url('projects/project_details/'.$key->project_id) ?>">
+                                                                <span class="mt-comment-author"><?= 'J'.$key->project_id.' '.$key->title ?></span>
+                                                            </a>
+                                                            <span class="mt-comment-date">Created at <?= date_convert(date('d-m-Y H:i:s', strtotime($key->created_at)), 'd M, Y h:i A');  ?></span>
+                                                        </div>
+                                                        <!-- <div class="mt-comment-text"><?=  strlen($key->description) > 50 ? substr($key->description,0,50)."..." : $key->description; ?></div> -->
+                                                        <!-- <div class="mt-comment-text">Price Estimated <?php echo $key->estimated_price ?></div> -->
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <?php endforeach; ?>
+
+                                            <!-- END: Comments -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            
+                            <?php if(in_array($designation_id, [1,6,8])): ?>
+                            <div class="col-lg-6 col-xs-12 col-sm-12">
+                                <div class="portlet light bordered">
+                                    <div class="portlet-title tabbable-line">
+                                        <div class="caption">
+                                            <i class="icon-bubbles font-dark hide"></i>
+                                            <span class="caption-subject font-dark bold uppercase">Cad status</span>
+                                        </div>
+                                        <!-- <ul class="nav nav-tabs">
+                                            <li class="active">
+                                                <a href="#portlet_comments_1" data-toggle="tab"> Pending </a>
+                                            </li>
+                                            <li>
+                                                <a href="#portlet_comments_2" data-toggle="tab"> Approved </a>
+                                            </li>
+                                        </ul> -->
+                                    </div>
+                                    <div class="portlet-body" style="height: 300px; overflow-y: scroll;">
+                                        <div class="tab-content" id="cad_progression_div">
+                                            <!-- BEGIN: Comments -->
+                                            <?php foreach ($all_cad_progress_notification as $key) : ?>
+                                            <?php $project_desc = $this->db->get_where('project_details', ['project_id' => $key->project_id])->row() ?>
+                                            <?php $asign_user = $this->db->get_where('project', ['project_id' => $key->project_id])->row(); ?>
+                                            <?php $client = $this->db->get_where('user', ['id' => $asign_user->asign_user])->row(); ?>
+                                            <?php 
+                                            // echo '<pre>';
+                                            // print_r($client); die; ?>
+                                            <div class="mt-comments">
+                                                <div class="mt-comment">
+                                                    <!-- <div class="mt-comment-img">
+                                                    <img src="../assets/pages/media/users/avatar1.jpg"> </div> -->
+                                                    <div class="mt-comment-body">
+                                                        <div class="mt-comment-info">
+                                                            <a href="<?= site_url('projects/project_details/'.$key->project_id) ?>">
+                                                                <span class="mt-comment-author"><?= 'J'.$key->project_id.' '.$project_desc->title ?></span>
+                                                            </a>
+                                                            <span class="mt-comment-date">Updated at <?= date_convert(date('d-m-Y H:i:s', strtotime($key->created_at)), 'd M, Y h:i A'); ?></span>
+                                                            
+                                                        </div>
+                                                        <div class="mt-comment-text">
+                                                          Client: <?php echo $client->name; ?>
+                                                        </div>
+                                                        <div class="mt-comment-text">Cad Status changed to <?php echo $key->cad_progress ?></div>
+                                                        
+                                                        <div class="mt-comment-details">
+                                                            <!-- <span class="mt-comment-status mt-comment-status-pending">Proposal</span> -->
+                                                            <ul class="mt-comment-actions">
+                                                                <li>
+                                                                    <a class="seen_cad_progession" data-id="<?php echo $key->project_tracking_history_id ?>">Seen</a>
+                                                                </li>
+                                                                
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <?php endforeach; ?>
+
+                                            <!-- END: Comments -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if (in_array($designation_id, [9])) : ?>
+                            <div class="col-lg-12 col-xs-12 col-sm-12">
+                                <div class="portlet light bordered">
+                                    <div class="portlet-title tabbable-line">
+                                        <div class="caption">
+                                            <i class="icon-bubbles font-dark hide"></i>
+                                            <span class="caption-subject font-dark bold uppercase">Cad dates & 3d print dates</span>
+                                        </div>
+                                        <ul class="nav nav-tabs">
+                                            <li class="active">
+                                                <a href="#cad_dates_tab" data-toggle="tab" aria-expanded="true"> Cad dates </a>
+                                            </li>
+                                            <li class="">
+                                                <a href="#cad_3d_print_date_tab" data-toggle="tab" aria-expanded="false"> Printing dates </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                    <div class="portlet-body" style="overflow: auto">
+                                        <div class="tab-content">
+                                            <div class="tab-pane active" id="cad_dates_tab" >
+                                               <div id="cad_dates_calendar"></div>
+                                            </div>
+                                            <div class="tab-pane" id="cad_3d_print_date_tab">
+                                               <div id="cad_3d_print_dates_calendar"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                       
+                    </div>
+                    <!-- END CONTENT BODY -->
+                </div>
+                <!-- END CONTENT -->
+                <!-- BEGIN QUICK SIDEBAR -->
+                <a href="javascript:;" class="page-quick-sidebar-toggler">
+                    <i class="icon-login"></i>
+                </a>
+                <!-- END QUICK SIDEBAR -->
+            </div>
+            <!-- END CONTAINER -->
+            <!-- BEGIN FOOTER -->
+            <?php include 'inc/footer.php'; ?>
+            <!-- END FOOTER -->
+        </div>
+
+        
+        
+        <!--[if lt IE 9]>
+<script src="../assets/global/plugins/respond.min.js"></script>
+<script src="../assets/global/plugins/excanvas.min.js"></script> 
+<script src="../assets/global/plugins/ie8.fix.min.js"></script> 
+<![endif]-->
+        <!-- BEGIN CORE PLUGINS -->
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/bootstrap/js/bootstrap.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/js.cookie.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-slimscroll/jquery.slimscroll.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery.blockui.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/bootstrap-switch/js/bootstrap-switch.min.js" type="text/javascript"></script>
+        <!-- END CORE PLUGINS -->
+        <!-- BEGIN PAGE LEVEL PLUGINS -->
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/moment.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/bootstrap-daterangepicker/daterangepicker.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/morris/morris.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/morris/raphael-min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/counterup/jquery.waypoints.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/counterup/jquery.counterup.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/amcharts/amcharts/amcharts.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/amcharts/amcharts/serial.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/amcharts/amcharts/pie.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/amcharts/amcharts/radar.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/amcharts/amcharts/themes/light.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/amcharts/amcharts/themes/patterns.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/amcharts/amcharts/themes/chalk.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/amcharts/ammap/ammap.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/amcharts/ammap/maps/js/worldLow.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/amcharts/amstockcharts/amstock.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/fullcalendar/fullcalendar.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/horizontal-timeline/horizontal-timeline.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/flot/jquery.flot.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/flot/jquery.flot.resize.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/flot/jquery.flot.categories.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery-easypiechart/jquery.easypiechart.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jquery.sparkline.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jqvmap/jqvmap/jquery.vmap.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jqvmap/jqvmap/maps/jquery.vmap.russia.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jqvmap/jqvmap/maps/jquery.vmap.world.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jqvmap/jqvmap/maps/jquery.vmap.europe.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jqvmap/jqvmap/maps/jquery.vmap.germany.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jqvmap/jqvmap/maps/jquery.vmap.usa.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/global/plugins/jqvmap/jqvmap/data/jquery.vmap.sampledata.js" type="text/javascript"></script>
+        <!-- END PAGE LEVEL PLUGINS -->
+        <!-- BEGIN THEME GLOBAL SCRIPTS -->
+        <script src="<?php echo base_url();?>assets/assets/global/scripts/app.min.js" type="text/javascript"></script>
+        <!-- END THEME GLOBAL SCRIPTS -->
+        <!-- BEGIN PAGE LEVEL SCRIPTS -->
+        <script src="<?php echo base_url();?>assets/assets/pages/scripts/dashboard.min.js" type="text/javascript"></script>
+        <!-- END PAGE LEVEL SCRIPTS -->
+        <!-- BEGIN THEME LAYOUT SCRIPTS -->
+        <script src="<?php echo base_url();?>assets/assets/layouts/layout/scripts/layout.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/layouts/layout/scripts/demo.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/layouts/global/scripts/quick-sidebar.min.js" type="text/javascript"></script>
+        <script src="<?php echo base_url();?>assets/assets/layouts/global/scripts/quick-nav.min.js" type="text/javascript"></script>
+        <!-- END THEME LAYOUT SCRIPTS -->
+        <script>
+            $(document).ready(function()
+            {
+                $('#clickmewow').click(function()
+                {
+                    $('#radio1003').attr('checked', 'checked');
+                });
+            })
+        </script>
+
+        <script>
+            $(document).on('click', '.seen_cad_progession', function(e){
+                e.preventDefault();
+                var id = $(this).data('id');
+                $.ajax({
+                    url: "<?php echo base_url('Project_controller/seen_cad_progession/')?>"+"/"+id,
+                    success:function(data){
+                        $("#cad_progression_div").load(location.href + ' #cad_progression_div');
+                    }
+                });
+            });
+        </script> 
+        <script>
+            $(document).on('click', '.seen_msg', function(e){
+                e.preventDefault();
+                var id = $(this).data('id');
+                $.ajax({
+                    url: "<?php echo base_url('Project_controller/seen_project_msg/')?>"+"/"+id,
+                    success:function(data){
+                        $("#message_tab").load(location.href + ' #message_tab');
+                    }
+                });
+            });
+            $(document).on('click', '.seen_reply', function(e){
+                e.preventDefault();
+                var id = $(this).data('id');
+                $.ajax({
+                    url: "<?php echo base_url('Project_controller/seen_project_reply/')?>"+"/"+id,
+                    success:function(data){
+                        $("#reply_tab").load(location.href + ' #reply_tab');
+                    }
+                });
+            });
+            $(document).on('click', '.seen_all_project_msg', function(e){
+                swal({
+                  title: "Are you sure?",
+                  buttons: true,
+                })
+                .then((willDelete) => {
+                  if (willDelete) {
+                    $.ajax({
+                    url: "<?php echo base_url('Project_controller/seen_all_project_msg/')?>",
+                        success:function(data){
+                            $("#project_msg_div").load(location.href + ' #project_msg_div');
+                        }
+                    });
+                  }
+                });
+            });
+        </script>
+
+        <?php if (in_array($designation_id, [9])) : ?>
+        <script src='<?php echo base_url('assets/fullcalendar/packages/core/main.js')?>'></script>
+        <script src='<?php echo base_url('assets/fullcalendar/packages/interaction/main.js')?>'></script>
+        <script src='<?php echo base_url('assets/fullcalendar/packages/daygrid/main.js')?>'></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+        <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    var calendarEl = document.getElementById('cad_dates_calendar');
+
+                    var calendar = new FullCalendar.Calendar(calendarEl, {
+                      height: 320,
+                      plugins: [ 'interaction', 'dayGrid' ],
+                      header: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridWeek,dayGridDay'
+                      },
+                      defaultDate: '<?php echo date('Y-m-d') ?>',
+                      defaultView: 'dayGridWeek',
+                      navLinks: true, // can click day/week names to navigate views
+                      eventLimit: true, // allow "more" link when too many events
+                      events: [
+                       <?php foreach ($cad_slots as $key): ?>
+                        {
+                          id: '<?php echo $key->cad_slot_id ?>',
+                          title: '<?php echo 'J'.$key->project_id ?>',
+                          url: '<?php echo base_url('projects/project_details/'.$key->project_id) ?>',
+                          start: '<?php echo $key->date ?>'
+                        },
+                        <?php endforeach; ?>
+                        <?php foreach ($vacations as $key): ?>
+                        {
+                          id: '<?php echo $key->vacation_id ?>',
+                          title: 'Vacation',
+                          start: '<?php echo $key->start_date ?>',
+                          end: '<?php echo date('Y-m-d', strtotime($key->end_date. ' +1 day')) ?>'
+                        },
+                        <?php endforeach; ?>
+                      ]
+                    });
+
+                    calendar.render();
+                  });
+        </script>
+
+        <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    var calendarEl = document.getElementById('cad_3d_print_dates_calendar');
+
+                    var calendar = new FullCalendar.Calendar(calendarEl, {
+                      height: 320,
+                      plugins: [ 'interaction', 'dayGrid' ],
+                      header: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridWeek,dayGridDay'
+                      },
+                      defaultDate: '<?php echo date('Y-m-d') ?>',
+                      defaultView: 'dayGridWeek',
+                      navLinks: true, // can click day/week names to navigate views
+                      eventLimit: true, // allow "more" link when too many events
+                      events: [
+                       <?php foreach ($cad_3d_print_date as $key): ?>
+                        {
+                          id: '<?php echo $key->cad_3d_print_date_id ?>',
+                          title: '<?php echo 'J'.$key->project_id ?>',
+                          url: '<?php echo base_url('projects/project_details/'.$key->project_id) ?>',
+                          start: '<?php echo $key->date ?>'
+                        },
+                        <?php endforeach; ?>
+                      ]
+                    });
+
+                    calendar.render();
+                  });
+        </script>
+        <?php endif; ?>
+
+    </body>
+
+</html>

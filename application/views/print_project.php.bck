@@ -1,0 +1,123 @@
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+		Remove this if you use the .htaccess -->
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<title></title>
+		<meta name="description" content="" />
+		<meta name="author" content="admin" />
+		<meta name="viewport" content="width=device-width; initial-scale=1.0" />
+		<link href="https://fonts.googleapis.com/css?family=Oswald:300,400,500,600,700,900" rel="stylesheet"/>
+		<!-- Replace favicon.ico & apple-touch-icon.png in the root of your domain and delete these references -->
+		<link rel="shortcut icon" href="images/favicon.png" alt=""/>
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.0.13/css/all.css" integrity="sha384-DNOHZ68U8hZfKXOrtjWvjxusGo9WQnrNx2sqG0tfsghAvtVlRW3tvkXWZh58N9jp" crossorigin="anonymous"/>
+		<link href="css/font-awesome.css" rel="stylesheet">
+		<!-- <link rel="stylesheet" href="css/bootstrap.css" /> -->
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+		<link rel="stylesheet" href="css/custom.css" />
+		<style>
+			/*font-awesome*/
+
+
+			/*.thumbnail-pic img {
+			    width: 200px;
+			}*/
+		</style>
+	</head>
+	<body>
+		
+		
+		<section class="cad-section">
+			<div class="container-fluid">
+				<div class="cad-outr">
+					<div class="row">
+						<div class="col-md-8">
+							<div class="cad-innr">
+								<table class="table table-borderless">
+									<thead>
+										<tr>
+											<th>PROJECT ID</th>
+											<th>JOB ASSIGNEE</th>
+											<th>CREATED</th>
+											<th>DEADLINE</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td><?php echo $project_details->project_id ?></td>
+											<td>
+												<?php 
+												if($project_details->assignee != ''):
+												$assignee = explode(',', $project_details->assignee);
+												foreach ($assignee as $key) {
+													echo $this->db->get_where('user', ['id' => $key])->row()->name.'<br>';
+												}
+												endif;
+												?>
+													
+												</td>
+											<td><?php echo $project_details->created_at ?></td>
+											<td><?php echo $print_project_details->deadline ?></td>
+										</tr>
+									</tbody>
+								</table>
+								<table class="table table-borderless">
+									<thead>
+										<tr>
+											<th>CLIENT ID</th>
+											<th>CLIENT</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td>
+												<?php 
+													if($project->asign_user != 0){
+														echo $project->asign_user;
+													}
+												 ?>
+											<td>
+												<?php 
+													if($project->asign_user != 0){
+														echo $this->db->get_where('user', ['id' => $project->asign_user])->row()->name;
+													}
+												 ?>
+										</tr>
+									</tbody>
+								</table>
+								<table class="table table-borderless">
+									<thead>
+										<tr>
+											<th>$<?php echo $print_project_details->price . ' ' . $print_project_details->price_type ?></th>
+											<th>PO # <?php echo $print_project_details->po ?></th>
+										</tr>
+									</thead>
+								</table>
+								<p><?php echo $project_details->description ?></p>
+							</div>
+						</div>
+						
+					</div>
+					<div class="row">
+						<div class="col-md-12 my-4">
+							<?php if (count($project_files) > 0) { ?>
+							<?php foreach ($project_files as $key) { ?>
+							<img class="img-thumbnail mx-2"  width="200" src="<?php echo  $_SERVER["DOCUMENT_ROOT"].'/mastercasting_bck/uploads/proj_files/'.$key->file_name ?>" alt=""/>
+							<?php } ?>
+							<?php } ?>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+		
+		
+		
+		<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="http://maxcdn.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
+		<!-- Popper JS -->
+		
+	</body>
+</html>

@@ -1,0 +1,73 @@
+{
+    "id": "PENH7F1MV",
+    "uid": "0nggV9woUXbesx9AoaALcGnM4jy1",
+    "rawPrice": 123,
+    "status": "PROCESSING",
+    "dateCreated": "Fri May 24 2019 11:40:32",
+    "shippingOption":
+    {
+        "code": "PUROLATOR_FREE",
+        "country": "CA",
+        "price": 0
+    },
+    "address":
+    {
+        "company": "",
+        "country": "CA",
+        "email": "sawaya.daniel@gmail.com",
+        "firstName": "User",
+        "lastName": "Name",
+        "locality": "Toronto",
+        "phone": "14168888888",
+        "postalCode": "A1A1A1",
+        "region": "ON",
+        "streetAddress": "123 CN Tower StS"
+    },
+    "products": [
+    {
+        "data":
+        {
+            "name": "Starstruck Pavé Girls Charm",
+            "sku": "GANS-0033"
+        },
+        "configuration":
+        {
+            "CHAIN_LENGTH":
+            {
+                "quality": "STERLING",
+                "type": "14"
+            },
+            "METAL_1":
+            {
+                "quality": "STERLING",
+                "type": "SILVER"
+            },
+            "STONE_1":
+            {
+                "quality": "SIMULATED",
+                "type": "PERIDOT"
+            }
+        }
+    },
+    {
+        "data":
+        {
+            "name": "Say My Name Pavé Girls Bracelet",
+            "sku": "GMBS-0002"
+        },
+        "configuration":
+        {
+            "METAL_1":
+            {
+                "quality": "STERLING",
+                "type": "SILVER"
+            },
+            "STONE_1":
+            {
+                "quality": "SIMULATED",
+                "type": "RAINBOW"
+            },
+            "TEXT_1": "DREAM"
+        }
+    }]
+}

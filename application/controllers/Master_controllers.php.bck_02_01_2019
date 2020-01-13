@@ -1,0 +1,1013 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class Master_controllers extends CI_Controller {
+	function __construct() {
+		parent::__construct();
+		//$this->load->helper(form);
+		$this->load->model("database_model");
+		$this->load->model("projectmodel");
+		$this->load->library('email');
+		$this->load->library('pagination');
+		$this->load->helper("url");
+	}
+
+	public function index() {
+		if(!$this->session->userdata('username'))
+			return $this->load->view('login');
+		return redirect('Master_controllers/dashboard'); 
+	}
+
+	public function login() {
+		$this->load->library('form_validation');
+		$this->form_validation->set_rules('username', 'Username', 'required');
+		$this->form_validation->set_rules('password', 'Password', 'required');
+		if ($this->form_validation->run()) {
+
+			$username = $this->input->post('username');
+			$password = md5($this->input->post('password'));
+
+			$this->load->model('database_model');
+
+			if ($this->database_model->can_login($username, $password)) {
+				redirect('Master_controllers/dashboard');
+			} else {
+				$this->session->set_flashdata('error', 'Invalid username and password');
+				redirect('Master_controllers/index');
+			}
+		} else {
+			$this->login();
+		}
+	}
+	
+	public function enter() {
+		if ($this->session->userdata('username') != '') {
+			echo '<h2>Welcome -' . $this->session->userdata('username') . '</h2>';
+			echo '<label><a href="' . base_url('Master_controllers/logout') . '">Logout</a></label>';
+		} else {
+			redirect('Master_controllers/index');
+		}
+
+	}
+	
+	public function logout() {
+		$this->session->unset_userdata(['username','user_id','designation_id']);
+		redirect('Master_controllers/index');
+	}
+	
+	public function dashboard() {
+
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+
+			$data['count_admin_project'] = $this->database_model->admin_project_count();
+			$data['total'] = count($this->database_model->admin_project_count());
+			$data['count_manager_project'] = $this->database_model->manager_project_count();
+			$data['total1'] = count($this->database_model->manager_project_count());
+			$data['count_user_project'] = $this->database_model->user_project_count();
+			$data['total2'] = count($this->database_model->user_project_count());
+			$data['attach_file_admin'] = $this->database_model->admin_attach_count();
+			$data['attach1'] = count($this->database_model->admin_attach_count());
+			$data['attach_file_manager'] = $this->database_model->manager_attach_count();
+			$data['attach2'] = count($this->database_model->manager_attach_count());
+			$data['attach_file_user'] = $this->database_model->user_attach_count();
+			$data['attach3'] = count($this->database_model->user_attach_count());
+
+			$data['pending_projects'] = $this->database_model->pending_projects();
+			$data['pending_projects_manager'] = $this->database_model->pending_projects_manager();
+			$data['pending_projects_user'] = $this->database_model->pending_projects_user();
+
+			$data['view_all_message'] = $this->database_model->view_all_message();
+
+			$data['view_manager_message'] = $this->database_model->view_manager_message();
+			$data['view_user_message'] = $this->database_model->view_user_message();
+
+			//new 
+			$data['client_approval'] = $this->client_approval();
+			if($this->client_approval())
+				$data['deadline_projects'] = $this->projectmodel->get_deadline_projects(true);
+			else
+				$data['deadline_projects'] = $this->projectmodel->get_deadline_projects();
+			
+			$this->load->view('index', $data);
+		}
+	}
+
+	public function client() {
+
+		{
+			if (isset($this->session->userdata['username']) == FALSE) {
+
+				redirect('Master_controllers/index');
+			} else {
+				$this->load->model("database_model");
+				$result["get_data"] = $this->database_model->get_data();
+				$this->load->view("client", $result);
+				//print_r($result);
+			}
+
+		}
+	}
+
+	public function insert_user() {
+		$this->load->model("database_model");
+		$data = array(
+			'name' => $this->input->post('user_name'),
+			'email' => $this->input->post('email'),
+			'phone' => $this->input->post('phone'),
+			'designation_id' => $this->input->post('sample_1_length'),
+			'password' => MD5($this->input->post('password')),
+		);
+		//print_r($data);
+		//die;
+		$this->database_model->insert_user($data);
+		$this->email->from('mastercasting@kushalsethia.com', 'mastercasting');
+		//$this->email->from('lifecoach@kushalsethia.com', 'mastercasting');
+		$this->email->to($this->input->post('email'));
+		//$this->email->cc($alternate_admin_email);
+		$this->email->subject('Mastercasting:User Password');
+		$this->email->message($this->input->post('password'));
+		$this->email->send();
+		redirect("Master_controllers/all_team_members");
+
+	}
+
+	public function project() {
+
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['user_data'] = $this->database_model->select_all_user_data();
+			$data['project_join_data'] = $this->database_model->select_all_projectr_data();
+
+			$data['project_join_data_admin'] = $this->database_model->select_all_projectr_data_admin(); //view all projects for admin only
+
+			$data['user_projectr_data'] = $this->database_model->select_user_projectr_data(); // user project data
+
+			$data['project_data'] = $this->database_model->view_all_projects();
+			$data['view_manager'] = $this->database_model->all_project_assign_manager();
+
+			$data['get_manager'] = $this->database_model->select_all_manager();
+			/*				print_r( $data["project_data"]);
+				   die;
+			*/
+			//$data['designation_data'] = $this->database_model->select_all_designation_data();
+			//  print_r( $data["user_data"]);
+			// print_r( $data["designation_data"]);die;
+			$this->load->view('project', $data);
+		}
+	}
+
+	public function insert_project() {
+
+		$project_data = array(
+			'project_name' => $this->input->post('project_name'),
+			'manager_category' => $this->input->post('all_manager'),
+			'price' => $this->input->post('price'),
+			'asign_user' => $this->input->post('user'),
+			/*'assign_designer' => $this->input->post('designing'),
+				'assign_casting' => $this->input->post('casting'),				//insert all data into project table
+				'assign_packing' => $this->input->post('packing'),
+			*/
+
+		);
+		//print_r($project_data);
+		//die();
+		$this->database_model->insert_project($project_data);
+		redirect("Master_controllers/project");
+	}
+
+	public function update_all_project_members() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$project_id = $this->input->post('project_id');
+
+			$project_member_update = array(
+				'assign_designer' => $this->input->post('designing'),
+				'assign_casting' => $this->input->post('casting'),
+				'assign_packing' => $this->input->post('packing'),
+			);
+			$this->database_model->project_member_update($project_id, $project_member_update);
+
+			$this->session->set_flashdata('success', 'Project Members Updated successfully');
+			redirect("Master_controllers/project");
+
+		}
+	}
+
+	public function project_delete($project_id) {
+		$project_id;
+		//$id=$this->input->get('id');
+		//echo $project_id."<br>";
+		//die;
+		$this->database_model->projectdelete($project_id);
+		//$this->load->view('project');
+
+		$this->session->set_flashdata('success', 'Project Deleted successfully');
+
+		redirect("Master_controllers/project");
+	}
+
+	public function project_edit($project_id) {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			/* echo $project_id;
+			die; */
+			$query['user_data'] = $this->database_model->select_all_user_data();
+			$query['edit_data'] = $this->database_model->edit_project_by_id($project_id);
+			$query['get_manager'] = $this->database_model->select_all_manager();
+
+			$this->load->view('project_edit', $query);
+
+		}
+	}
+
+	public function update_project() {
+
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			//die;
+			$project_id = $this->input->post('project_id');
+			$project_update = array(
+				'project_name' => $this->input->post('project_name'),
+
+				'price' => $this->input->post('project_price'),
+			);
+
+			$this->database_model->update_project($project_id, $project_update);
+			redirect("Master_controllers/project");
+		}
+
+	}
+
+	public function all_team_members() {
+
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$this->load->model("database_model");
+			$result["get_data"] = $this->database_model->get_data();
+			$this->load->view('team_members', $result);
+		}
+	}
+
+	public function all_designer() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$this->load->model("database_model");
+			$result["get_designer"] = $this->database_model->get_designer_data();
+			$this->load->view('team_designer', $result);
+		}
+	}
+
+	public function all_casting() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$this->load->model("database_model");
+			$result["get_casting"] = $this->database_model->get_casting_data();
+			$this->load->view('team_casting', $result);
+		}
+	}
+
+	public function all_packing() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$this->load->model("database_model");
+			$result["get_packing"] = $this->database_model->get_packing_data();
+			$this->load->view('team_packing', $result);
+		}
+	}
+
+	public function all_manager() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$this->load->model("database_model");
+			$result["get_manager"] = $this->database_model->get_manager_data();
+			$this->load->view('team_manager', $result);
+		}
+	}
+
+	public function edit_profile() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+			redirect('Master_conteollers/index');
+		} else {
+			$current_user = $this->session->userdata('username');
+			$query['data'] = $this->database_model->select_by_username($current_user);
+			$this->load->view('edit_profile', $query);
+		}
+	}
+
+	public function update_profile() {
+		$id = $this->input->post('id');
+		$profile_data = array(
+
+			'name' => $this->input->post('name'),
+			'email' => $this->input->post('email'),
+			'address1' => $this->input->post('address'),
+			'city' => $this->input->post('city'),
+			'password' => MD5($this->input->post('password')),
+		);
+		$this->database_model->profile_update($id, $profile_data);
+		redirect("Master_controllers/dashboard");
+	}
+
+	public function user_delete($user_id) {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$this->database_model->delete_user($user_id);
+			redirect("Master_controllers/all_team_members");
+		}
+	}
+
+	public function update_all_project_manager() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$project_id = $this->input->post('project_id');
+			$project_manager_update = array(
+				'project_name' => $this->input->post('project_name'),
+				'price' => $this->input->post('project_price'),
+				'manager_category' => $this->input->post('manager'),
+			);
+			/* echo $project_id;
+			print_r($project_manager_update);die; */
+
+			$this->database_model->project_manager_update($project_id, $project_manager_update);
+
+			$this->session->set_flashdata('success', 'Record Updated successfully');
+			redirect("Master_controllers/project");
+
+		}
+	}
+
+	public function payments() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$this->load->view('payments');
+		}
+	}
+
+	public function message() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$this->load->view('message');
+		}
+	}
+
+	public function project_details($project_id) {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$query['project_details'] = $this->database_model->select_project_details($project_id);
+			/* $query['edit_data'] = $this->database_model->edit_project_by_id($project_id);
+			$query['get_manager']=$this->database_model->select_all_manager(); */
+
+			$limit = 5;
+			$start = 0;
+			$query['project_id'] = $project_id;
+			$query['start'] = $start + $limit;
+			$query['limit'] = $limit;
+			$query['total'] = count($this->database_model->select_message_details($project_id));
+			$query['display_message'] = $this->database_model->select_message_details_pag($project_id, $limit, $start);
+			$this->load->view('project_details', $query);
+		}
+	}
+
+	public function loadmore() {
+
+		$limit = $_GET['limit'];
+		$start = $_GET['start'];
+		$project_id = $_GET['project_id'];
+
+		$display_message = $this->database_model->select_message_details_pag($project_id, $limit, $start);
+		echo json_encode($display_message);
+	}
+
+	public function insert_message() {
+
+		if (!file_exists("uploads/file/")) {
+			mkdir("uploads/file/", 0777, true);
+		}
+		if ($_FILES['files']['name'] != '') {
+			$new_file_name = time() . str_replace(str_split(' ()\\/,:*?"<>|'), '', $_FILES['files']['name']);
+			$config['upload_path'] = 'uploads/file/';
+			$config['allowed_types'] = 'gif|jpg|png|bmp|jpeg|pdf|doc|txt|xlsx';
+			$config['file_name'] = $new_file_name;
+
+			$this->load->library('upload', $config);
+			if ($this->upload->do_upload('files')) {
+
+			} else {
+				echo "not upload";
+
+			}
+		} else {
+			$new_file_name = "";
+		}
+
+		//$this->load->model("database_model");
+		$data = array(
+			'project_id' => $this->input->post('project_id'),
+			'manager_id' => $this->input->post('manager_id'),
+			'assign_user' => $this->input->post('user_id'),
+			'message' => $this->input->post('message'),
+			'project_status' => $this->input->post('status'),
+			'uploaded_file' => $new_file_name,
+		);
+
+		$this->database_model->insert_message($data);
+
+		redirect("Master_controllers/project_details/" . $this->input->post('project_id'));
+	}
+
+	public function addshowcase() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$dir = "uploads/showcase/";
+			$image = $_FILES['image']['name'];
+			if ($image != "") {
+				$image = time() . $image;
+				move_uploaded_file($_FILES['image']['tmp_name'], $dir . $image);
+				$data['image'] = $image;
+				$data['name'] = $this->input->post('show_name');
+				$data['resource'] = $this->input->post('resource');
+				$this->database_model->addshowcase($data);
+				redirect('Master_controllers/dashboard');
+
+			}
+
+		}
+	}
+
+	public function master_showcase() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['details'] = $this->database_model->showcase_details();
+
+			$this->load->view('master_showcase', $data);
+
+		}
+	}
+
+	public function member_showcase() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['details'] = $this->database_model->showcase_details();
+
+			$this->load->view('member_showcase', $data);
+		}
+	}
+
+	public function Ready_To_Print() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['details'] = $this->database_model->showcase_details();
+
+			$this->load->view('Ready_To_Print', $data);
+
+		}
+	}
+
+	public function Sketch_to_CAD() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['details'] = $this->database_model->showcase_details();
+
+			$this->load->view('Sketch_to_CAD', $data);
+
+		}
+	}
+
+	public function showcase_page() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+
+			$this->load->view('addshowcase');
+
+		}
+
+	}
+
+	public function edit_showcase() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$id = $_REQUEST['id'];
+			$data['details'] = $this->database_model->per_showcase_details($id);
+
+			$this->load->view('showcase_edit', $data);
+
+		}
+
+	}
+
+	public function edit_done_showcase() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$dir = "uploads/showcase/";
+			$id = $this->input->post('id');
+			$page = $this->input->post('page');
+			$old_pic = $this->input->post('old_pic');
+			$data['name'] = $this->input->post('show_name');
+			$data['resource'] = $this->input->post('resource');
+			$image = $_FILES['image']['name'];
+			if ($image != "") {
+				$image = time() . $image;
+				move_uploaded_file($_FILES['image']['tmp_name'], $dir . $image);
+				unlink($dir . $old_pic);
+			} else {
+				$image = $old_pic;
+			}
+			$data['image'] = $image;
+
+			$this->database_model->edit_done_showcase($id, $data);
+			redirect('Master_controllers/edit_showcase?id=' . $id);
+
+		}
+
+	}
+
+	public function delete_showcase() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			echo $id = $_REQUEST['id'];
+			$this->database_model->delete_showcase($id);
+
+		}
+
+	}
+
+	public function client_project_details($id = 0) {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+
+			if ($this->uri->segment(4)) {
+				$offset = $this->uri->segment(4);
+			} else {
+				$offset = 0;
+			}
+
+			$data1 = $this->database_model->client_all_project_details($id);
+			$count = sizeof($data1);
+
+			$config = [
+				'base_url' => site_url() . '/Master_controllers/client_project_details/' . $id . '/',
+				'per_page' => 2,
+				'total_rows' => $count,
+				'uri_segment' => 4,
+			];
+			$this->pagination->initialize($config);
+			$data['details'] = $this->database_model->client_project_details($id, $config['per_page'], $offset);
+
+			$this->load->view('client_all_project', $data);
+		}
+
+	}
+
+	public function all_pending_details($id = 0) {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+
+			if ($this->uri->segment(4)) {
+				$offset = $this->uri->segment(4);
+			} else {
+				$offset = 0;
+			}
+
+			$data1 = $this->database_model->client_all_pending_project_details($id);
+			$count = sizeof($data1);
+
+			$config = [
+				'base_url' => site_url() . '/Master_controllers/all_pending_details/' . $id . '/',
+				'per_page' => 2,
+				'total_rows' => $count,
+				'uri_segment' => 4,
+			];
+			$this->pagination->initialize($config);
+			$data['details'] = $this->database_model->client_pending_project_details($id, $config['per_page'], $offset);
+
+			$this->load->view('client_pending_project', $data);
+		}
+
+	}
+
+	public function all_complete_details($id = 0) {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+
+			if ($this->uri->segment(4)) {
+				$offset = $this->uri->segment(4);
+			} else {
+				$offset = 0;
+			}
+
+			$data1 = $this->database_model->client_all_complete_project_details($id);
+			$count = sizeof($data1);
+
+			$config = [
+				'base_url' => site_url() . '/Master_controllers/all_complete_details/' . $id . '/',
+				'per_page' => 2,
+				'total_rows' => $count,
+				'uri_segment' => 4,
+			];
+			$this->pagination->initialize($config);
+			$data['details'] = $this->database_model->client_complete_project_details($id, $config['per_page'], $offset);
+
+			$this->load->view('client_complete_project', $data);
+		}
+
+	}
+
+	public function all_testing_details($id = 0) {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+
+			if ($this->uri->segment(4)) {
+				$offset = $this->uri->segment(4);
+			} else {
+				$offset = 0;
+			}
+
+			$data1 = $this->database_model->client_all_testing_project_details($id);
+			$count = sizeof($data1);
+
+			$config = [
+				'base_url' => site_url() . '/Master_controllers/all_testing_details/' . $id . '/',
+				'per_page' => 2,
+				'total_rows' => $count,
+				'uri_segment' => 4,
+			];
+			$this->pagination->initialize($config);
+			$data['details'] = $this->database_model->client_testing_project_details($id, $config['per_page'], $offset);
+
+			$this->load->view('client_testing_project', $data);
+		}
+
+	}
+
+	public function all_approved_details($id = 0) {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+
+			if ($this->uri->segment(4)) {
+				$offset = $this->uri->segment(4);
+			} else {
+				$offset = 0;
+			}
+
+			$data1 = $this->database_model->client_all_approved_project_details($id);
+			$count = sizeof($data1);
+
+			$config = [
+				'base_url' => site_url() . '/Master_controllers/all_approved_details/' . $id . '/',
+				'per_page' => 2,
+				'total_rows' => $count,
+				'uri_segment' => 4,
+			];
+			$this->pagination->initialize($config);
+			$data['details'] = $this->database_model->client_approved_project_details($id, $config['per_page'], $offset);
+
+			$this->load->view('client_approved_project', $data);
+		}
+
+	}
+
+	public function all_rejected_details($id = 0) {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+
+			if ($this->uri->segment(4)) {
+				$offset = $this->uri->segment(4);
+			} else {
+				$offset = 0;
+			}
+
+			$data1 = $this->database_model->client_all_rejected_project_details($id);
+			$count = sizeof($data1);
+
+			$config = [
+				'base_url' => site_url() . '/Master_controllers/all_rejected_details/' . $id . '/',
+				'per_page' => 2,
+				'total_rows' => $count,
+				'uri_segment' => 4,
+			];
+			$this->pagination->initialize($config);
+			$data['details'] = $this->database_model->client_rejected_project_details($id, $config['per_page'], $offset);
+
+			$this->load->view('client_rejected_project', $data);
+		}
+
+	}
+
+	public function add_submaster_showcase() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['details'] = $this->database_model->showcase_details();
+
+			$this->load->view('add_submaster_showcase', $data);
+
+		}
+
+	}
+	public function add_submember_showcase() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['details'] = $this->database_model->showcase_details();
+
+			$this->load->view('add_submember_showcase', $data);
+
+		}
+
+	}
+
+	public function add_subready_to_print() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['details'] = $this->database_model->showcase_details();
+
+			$this->load->view('add_subready_to_print', $data);
+
+		}
+
+	}
+
+	public function add_subsketch_to_cad() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['details'] = $this->database_model->showcase_details();
+
+			$this->load->view('add_subsketch_to_cad', $data);
+
+		}
+
+	}
+
+	public function addsubmaster() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$id = $_GET['id'];
+
+			$data['pic'] = $this->database_model->view_sub($id);
+
+			return $this->load->view('addsubmaster', $data);
+
+		}
+
+	}
+
+	public function addsubmaster_done() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+
+			// if($this->session->userdata("pic_form")!="")
+			// {
+			// $this->session->unset_userdata('pic_form');
+			$id = $this->input->post('id');
+			$name = $this->input->post('sub_name');
+
+			$count = sizeof($_FILES['file']['name']);
+			$multipe = $_FILES['file']['name'];
+
+			$image = $_FILES['image']['name'];
+			if ($image != "") {
+
+				if (!file_exists("uploads/sub/" . $id)) {
+					mkdir("uploads/sub/" . $id, 0777, true);
+				}
+				$dir = "uploads/sub/" . $id . "/";
+				$image = time() . $image;
+				move_uploaded_file($_FILES['image']['tmp_name'], $dir . $image);
+				$data['image'] = $image;
+				$data['resource_id'] = $id;
+				$data['name'] = $this->input->post('sub_name');
+
+				$data1['sub_resource_id'] = $this->database_model->addsub($data);
+				$images = "";
+				for ($i = 0; $i < $count; $i++) {
+					$image1 = time() . $_FILES['file']['name'][$i];
+					move_uploaded_file($_FILES['file']['tmp_name'][$i], $dir . $image1);
+					$data1['image'] = $image1;
+					$this->database_model->addsubpic($data1);
+					$images = $images . "+" . $image1;
+				}
+
+				$data3['pic'] = explode("+", ltrim($images, "+"));
+
+				//echo $url=base_url("index.php/Master_controllers/addsubmaster?id=".$id);
+				redirect('Master_controllers/addsubmaster?id=' . $id);
+
+				//header("location:".$url);
+
+			}
+			// }
+			// else
+			// {
+
+			//             return $this->addsubmaster($id);
+
+			// }
+
+		}
+
+	}
+
+	public function view_sub($id = 0) {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['details'] = $this->database_model->view_sub($id);
+			$this->load->view('view_sub', $data);
+		}
+
+	}
+
+	public function view_sub_deatils($id = 0, $sub_id = 0) {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+
+			$data['details'] = $this->database_model->view_sub_details($id);
+			$data['sub_id'] = $sub_id;
+			$this->load->view('view_sub_details', $data);
+
+		}
+
+	}
+
+	public function trade() {
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['details'] = $this->database_model->trade();
+			$this->load->view('trade', $data);
+
+		}
+	}
+
+	public function creare_trade() {
+
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$this->load->view("creare_trade");
+
+		}
+
+	}
+
+	public function creare_trade_done() {
+
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$data['category'] = $this->input->post('category');
+			$data['company'] = $this->input->post('company');
+			$data['name'] = $this->input->post('f_name') . " " . $this->input->post('l_name');
+			$data['email'] = $this->input->post('email');
+			$data['office_phone'] = $this->input->post('office_phone');
+			$data['mobile'] = $this->input->post('mobile');
+			$data['fax'] = $this->input->post('fax');
+			$data['address'] = $this->input->post('address');
+			$data['city'] = $this->input->post('city');
+			$data['state'] = $this->input->post('state');
+			$data['postal'] = $this->input->post('postal');
+			$data['country'] = $this->input->post('country');
+			$this->database_model->creare_trade_done($data);
+			redirect('Master_controllers/trade');
+		}
+
+	}
+
+	public function edit_trade() {
+
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$id = $_GET['id'];
+			$data['details'] = $this->database_model->trade_details($id);
+			//print_r($data);
+			$this->load->view('edit_trade', $data);
+
+		}
+
+	}
+
+	public function trade_edit_done() {
+
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$id = $this->input->post('id');
+			$data['category'] = $this->input->post('category');
+			$data['company'] = $this->input->post('company');
+			$data['name'] = $this->input->post('name');
+			$data['email'] = $this->input->post('email');
+			$data['office_phone'] = $this->input->post('office_phone');
+			$data['mobile'] = $this->input->post('mobile');
+			$data['fax'] = $this->input->post('fax');
+			$data['address'] = $this->input->post('address');
+			$data['city'] = $this->input->post('city');
+			$data['state'] = $this->input->post('state');
+			$data['postal'] = $this->input->post('postal');
+			$data['country'] = $this->input->post('country');
+			$this->database_model->trade_edit($id, $data);
+			redirect('Master_controllers/edit_trade?id=' . $id);
+
+		}
+
+	}
+
+	public function delete_trade() {
+
+		if (isset($this->session->userdata['username']) == FALSE) {
+
+			redirect('Master_controllers/index');
+		} else {
+			$id = $_POST['id'];
+			$this->database_model->delete_trade($id);
+
+		}
+
+	}
+
+	public function client_approval(){
+		if($this->session->userdata('designation_id') != 5)
+			return true;
+		return false;
+	}
+
+}

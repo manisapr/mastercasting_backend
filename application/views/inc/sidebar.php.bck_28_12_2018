@@ -1,0 +1,194 @@
+<?php $segment = $this->uri->segment(2); ?>
+<div class="page-sidebar-wrapper">
+    <!-- BEGIN SIDEBAR -->
+    <!-- DOC: Set data-auto-scroll="false" to disable the sidebar from auto scrolling/focusing -->
+    <!-- DOC: Change data-auto-speed="200" to adjust the sub menu slide up/down speed -->
+    <div class="page-sidebar navbar-collapse collapse">
+        <!-- BEGIN SIDEBAR MENU -->
+        <!-- DOC: Apply "page-sidebar-menu-light" class right after "page-sidebar-menu" to enable light sidebar menu style(without borders) -->
+        <!-- DOC: Apply "page-sidebar-menu-hover-submenu" class right after "page-sidebar-menu" to enable hoverable(hover vs accordion) sub menu mode -->
+        <!-- DOC: Apply "page-sidebar-menu-closed" class right after "page-sidebar-menu" to collapse("page-sidebar-closed" class must be applied to the body element) the sidebar sub menu mode -->
+        <!-- DOC: Set data-auto-scroll="false" to disable the sidebar from auto scrolling/focusing -->
+        <!-- DOC: Set data-keep-expand="true" to keep the submenues expanded -->
+        <!-- DOC: Set data-auto-speed="200" to adjust the sub menu slide up/down speed -->
+        <ul class="page-sidebar-menu  page-header-fixed " data-keep-expanded="false" data-auto-scroll="true" data-slide-speed="200" style="padding-top: 10px">
+            <!-- DOC: To remove the sidebar toggler from the sidebar you just need to completely remove the below "sidebar-toggler-wrapper" LI element -->
+            <!-- BEGIN SIDEBAR TOGGLER BUTTON -->
+            <li class="sidebar-toggler-wrapper hide">
+                <div class="sidebar-toggler">
+                    <span></span>
+                </div>
+            </li>
+            <!-- END SIDEBAR TOGGLER BUTTON -->
+            
+            <li class="nav-item start <?= $segment == 'dashboard' ? 'active' : ''  ?>">
+                <a href="<?php echo site_url('Master_controllers/dashboard');?>" class="nav-link">
+                    <i class="icon-home"></i>
+                    <span class="title">Dashboard</span>
+                    <span class="selected"></span>
+                    <span class="arrow open"></span>
+                </a>
+            </li>
+            <!-- <li class="heading">
+                <h3 class="uppercase">Projects</h3>
+            </li> -->
+            <li class="nav-item <?= in_array($segment, ['project','project_edit','project_details']) ? 'active' : ''  ?>">
+                <a href="javascript:;" class="nav-link nav-toggle">
+                    <i class="icon-briefcase"></i>
+                    <span class="title ">Project</span>
+                    <span class="arrow open"></span>
+                </a>
+                <ul class="sub-menu">
+                    <li class="nav-item">
+                        <a href="#" class="nav-link" data-toggle="modal" data-target="#exampleModalLong2">
+                            <span class="title" >Add New</span>
+                        </a>
+                    </li>
+                    <li class="nav-item <?= in_array($segment, ['project','project_edit','project_details']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/project');?>" class="nav-link ">
+                            <span class="title">All Projects</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-item <?= in_array($segment, ['all_team_members','client','all_designer','all_casting','all_packing','all_manager','client_project_details','all_pending_details','all_complete_details','all_testing_details','all_approved_details','all_rejected_details']) ? 'active' : ''  ?>">
+                <a href="javascript:;" class="nav-link nav-toggle">
+                    <i class="icon-briefcase"></i>
+                    <span class="title">Members</span>
+                    <span class="arrow open"></span>
+                </a>
+                <ul class="sub-menu">
+                    <li class="nav-item <?= in_array($segment, ['all_team_members','all_designer','all_casting','all_packing','all_manager']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/all_team_members');?>" class="nav-link ">
+                            <span class="title">Team Members</span>
+                        </a>
+                    </li>
+                    <li class="nav-item <?= in_array($segment,['client','client_project_details','all_pending_details','all_complete_details','all_testing_details','all_approved_details','all_rejected_details']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/client');?>" class="nav-link ">
+                            <span class="title">Clients</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-item <?= in_array($segment, ['payments']) ? 'active' : ''  ?>">
+                <a href="javascript:;" class="nav-link nav-toggle">
+                    <i class="icon-briefcase"></i>
+                    <span class="title">Payment</span>
+                    <span class="arrow open"></span>
+                </a>
+                <ul class="sub-menu">
+                    <li class="nav-item <?= in_array($segment, ['payments']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/payments');?>" class="nav-link ">
+                            <span class="title">All Payments</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-item <?= in_array($segment, ['message']) ? 'active' : ''  ?>">
+                <a href="javascript:;" class="nav-link nav-toggle">
+                    <i class="icon-briefcase"></i>
+                    <span class="title">Message</span>
+                    <span class="arrow open"></span>
+                </a>
+                <ul class="sub-menu">
+                    <li class="nav-item  <?= in_array($segment, ['message']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/message');?>" class="nav-link">
+                            <span class="title">All Messages</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-item <?= in_array($segment, ['master_showcase','edit_showcase','member_showcase','Ready_To_Print','Sketch_to_CAD']) ? 'active' : ''  ?>">
+                <a href="javascript:;" class="nav-link nav-toggle">
+                    <i class="icon-briefcase"></i>
+                    <span class="title">Resource</span>
+                    <span class="arrow open"></span>
+                </a>
+                <ul class="sub-menu">
+                    <li class="nav-item">
+                        <!--  <a href="#" class="nav-link" data-toggle="modal" data-target="#exampleModalLong3">
+                            <span class="title" >Add Showcase</span>
+                        </a> -->
+                        <a href="<?php echo site_url(); ?>/Master_controllers/showcase_page" class="nav-link" data-toggle="modal" data-target="#exampleModalLong3">
+                            <span class="title" >Add Showcase</span>
+                        </a>
+                    </li>
+                    <li class="nav-item <?= in_array($segment, ['master_showcase']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/master_showcase');?>" class="nav-link">
+                            <span class="title">Master Showcase</span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+                    <li class="nav-item <?= in_array($segment, ['member_showcase']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/member_showcase');?>" class="nav-link">
+                            <span class="title">Member Showcase</span>
+                        </a>
+                    </li>
+                    
+                    
+                    <li class="nav-item <?= in_array($segment, ['Ready_To_Print']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/Ready_To_Print');?>" class="nav-link">
+                            <span class="title">Ready-To-Print Models</span>
+                        </a>
+                    </li>
+                    
+                    
+                    <li class="nav-item <?= in_array($segment, ['Sketch_to_CAD']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/Sketch_to_CAD');?>" class="nav-link">
+                            <span class="title">Sketch to CAD</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-item <?= in_array($segment, ['add_submaster_showcase','add_submember_showcase','add_subready_to_print','add_subsketch_to_cad']) ? 'active' : ''  ?>">
+                <a href="javascript:;" class="nav-link nav-toggle">
+                    <i class="icon-briefcase"></i>
+                    <span class="title">Sub Resource</span>
+                    <span class="arrow open"></span>
+                </a>
+                <ul class="sub-menu">
+                    
+                    <li class="nav-item <?= in_array($segment, ['add_submaster_showcase']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/add_submaster_showcase');?>" class="nav-link">
+                            <span class="title">Master Showcase</span>
+                        </a>
+                    </li>
+                    
+                    
+                    
+                    <li class="nav-item <?= in_array($segment, ['add_submember_showcase']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/add_submember_showcase');?>" class="nav-link">
+                            <span class="title">Member Showcase</span>
+                        </a>
+                    </li>
+                    
+                    
+                    <li class="nav-item <?= in_array($segment, ['add_subready_to_print']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/add_subready_to_print');?>" class="nav-link">
+                            <span class="title">Ready-To-Print Models</span>
+                        </a>
+                    </li>
+                    
+                    
+                    <li class="nav-item <?= in_array($segment, ['add_subsketch_to_cad']) ? 'open' : ''  ?>">
+                        <a href="<?php echo site_url('Master_controllers/add_subsketch_to_cad');?>" class="nav-link">
+                            <span class="title">Sketch to CAD</span>
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li class="nav-item <?= in_array($segment, ['trade','edit_trade']) ? 'active' : ''  ?>">
+                <a href="<?php echo site_url('Master_controllers/trade');?>" class="nav-link1">
+                    <i class="icon-home"></i>
+                    <span class="title1">Trade</span>
+                    <span class="selected1"></span>
+                    <span class="arrow open1"></span>
+                </a>
+            </li>
+        </ul>
+        <!-- END SIDEBAR MENU -->
+    </div>
+    <!-- END SIDEBAR -->
+</div>

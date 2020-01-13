@@ -1,0 +1,1664 @@
+<?php
+defined('BASEPATH') or exit('No direct script access allowed');
+
+ini_set('max_execution_time', 0); 
+ini_set('memory_limit','2048M');
+
+class Project_controller extends CI_Controller
+{
+
+    /**
+     * @param $type_of_change
+     *
+     */
+
+    public $type_of_change = ['project_type' => 1];
+
+    public function __construct()
+    {
+        parent::__construct();
+        $this->load->model('projectmodel');
+        $this->load->model("member_model");
+        $this->load->library('email');
+
+        date_default_timezone_set('Asia/Calcutta');
+    }
+
+    public function index()
+    {
+        if (!$this->session->userdata('user_id')) {
+            return redirect();
+        }
+        $this->load->view('all_jobs');
+    }
+
+    public function login_check(){
+        if (!$this->session->userdata('user_id')) {
+            return redirect();
+        }
+    }
+
+    public function all_projects()
+    {
+        $this->login_check();
+        if ($this->client_approval()) {
+            $data['projects'] = $this->projectmodel->get_all_projects(true);
+        } else {
+            $data['projects'] = $this->projectmodel->get_all_projects();
+        }
+        // print_r($data['projects']);die;
+        $this->load->view('all_projects', $data);
+    }
+
+    public function complete_projects()
+    {
+        $this->login_check();
+        if ($this->client_approval()) {
+            $data['projects'] = $this->projectmodel->get_complete_projects(true);
+        } else {
+            $data['projects'] = $this->projectmodel->get_complete_projects();
+        }
+
+       
+        $this->load->view('all_projects', $data);
+    }
+
+    public function live_projects()
+    {
+        $this->login_check();
+        if ($this->client_approval()) {
+            $data['projects'] = $this->projectmodel->get_live_projects(true);
+        } else {
+            $data['projects'] = $this->projectmodel->get_live_projects();
+        }
+
+       
+        $this->load->view('all_projects', $data);
+    }
+
+    public function cancel_projects()
+    {
+        $this->login_check();
+        if ($this->client_approval()) {
+            $data['projects'] = $this->projectmodel->get_cancelled_projects(true);
+        } else {
+            $data['projects'] = $this->projectmodel->get_cancelled_projects();
+        }
+
+       
+        $this->load->view('all_projects', $data);
+    }
+    
+    public function add_project()
+    {
+        $this->login_check();
+
+        $data = $this->project_meta_fileds();
+
+        $project_files_temp = $this->db->get('project_files_temp')->result();
+        foreach ($project_files_temp as $key) {
+            $cnt = $this->db->get_where('project_files', ['file_name' => $key->file_name])->num_rows();
+            if($cnt < 1)
+                // echo $key->project_files_temp_id;
+                $this->delete_krajee_cad_img($key->project_files_temp_id);
+        }
+
+        $data['client_approval'] = $this->client_approval('designation_id');
+        $data['dynamic_id'] = $this->dynamic_id();
+        $this->load->view('add_projects', $data);
+    }
+
+    public function add_project_action()
+    {
+        $this->login_check();
+
+        $user_id = $this->session->userdata('user_id');
+
+        $project_details = $this->input->post('project_details');
+
+        $permissions = $this->input->post('permissions');
+        // print_r($project_details['assignee']);
+        // if(isset($project_details['assignee'])){
+        //  foreach ($project_details['assignee'] as $key => $value) {
+        //      $permission_data['user_id'] = $value;
+        //      $permission_data['permission_id'] = $permissions['permission_id'][$key];
+        //      $permission_data['level'] = $permissions['level'][$key];
+        //      $this->member_model->insert_permission($permission_data);
+        //  }
+        // }
+
+        $project_details['assignee'] = isset($project_details['assignee']) ? implode(',', $project_details['assignee']) : '';
+        
+        //insert project
+        $project = $this->input->post('project');
+        $project['project_name'] = $project_details['title'];
+        $project['price'] = $project_details['price'];
+        $project['assign_by'] = $this->session->userdata('user_id');
+        // // $project['dynamic_id'] = $this->dynamic_id();
+        // print_r($project);die;
+        $last_insert_id = $this->projectmodel->insert_project($project);
+        if ($last_insert_id === false) {
+            return "error";
+        }
+        
+        // new project details
+        $project_details['project_id'] = $last_insert_id;
+        $project_details['updated_at'] = date('Y-m-d H:i:s');
+        $project_details['type'] = 'proposal';
+
+        // print_r($project_details);die;
+        $result = $this->projectmodel->insert_project_details($project_details);
+        if ($result === false) {
+            return "error";
+        }
+
+        // $project_specification
+        $project_specification = $this->input->post('project_specification');
+
+        if ($project_specification) {
+            $project_specification['project_id'] = $last_insert_id;
+            $result = $this->projectmodel->insert_project_specification($project_specification);
+            if ($result === false) {
+                return "error";
+            }
+        }
+
+
+        //file upload
+        // if (count($_FILES['cad']['name']) > 0) {
+        //     for ($i=0; $i<count($_FILES['cad']['name']); $i++) {
+        //         $_FILES['file']['name']     = time().rand(10, 100).'-'.preg_replace('/[^A-Za-z0-9 _ .-]/', '', $_FILES['cad']['name'][$i]);
+        //         $_FILES['file']['type']     = $_FILES['cad']['type'][$i];
+        //         $_FILES['file']['tmp_name'] = $_FILES['cad']['tmp_name'][$i];
+        //         $_FILES['file']['error']     = $_FILES['cad']['error'][$i];
+        //         $_FILES['file']['size']     = $_FILES['cad']['size'][$i];
+                
+        //         // File upload configuration
+        //         $uploadPath = 'uploads/proj_files/';
+        //         $config['upload_path'] = $uploadPath;
+        //         $config['allowed_types'] = 'jpg|jpeg|png|pdf|doc|docx|xlxs|xlx|csv|txt|doc|docx|xlxs|xlx|csv|txt';
+                
+        //         // Load and initialize upload library
+        //         $this->load->library('upload', $config);
+        //         $this->upload->initialize($config);
+                
+        //         // Upload file to server
+        //         if ($this->upload->do_upload('file')) {
+        //             // Uploaded file data
+        //             $fileData = $this->upload->data();
+        //             $cadFilesData[$i]['file_name'] = $fileData['file_name'];
+        //         } else {
+        //             echo $this->upload->display_errors();
+        //             return;
+        //         }
+        //     }
+        // }
+
+
+        // if (count($_FILES['pic']['name']) > 0) {
+        //     for ($i=0; $i<count($_FILES['pic']['name']); $i++) {
+        //         $_FILES['file']['name']     = time().rand(10, 100).'-'.preg_replace('/[^A-Za-z0-9 _ .-]/', '', $_FILES['pic']['name'][$i]);
+        //         $_FILES['file']['type']     = $_FILES['pic']['type'][$i];
+        //         $_FILES['file']['tmp_name'] = $_FILES['pic']['tmp_name'][$i];
+        //         $_FILES['file']['error']     = $_FILES['pic']['error'][$i];
+        //         $_FILES['file']['size']     = $_FILES['pic']['size'][$i];
+                
+        //         // File upload configuration
+        //         $uploadPath = 'uploads/proj_files/';
+        //         $config['upload_path'] = $uploadPath;
+        //         $config['allowed_types'] = 'jpg|jpeg|png|pdf|doc|docx|xlxs|xlx|csv|txt';
+                
+        //         // Load and initialize upload library
+        //         $this->load->library('upload', $config);
+        //         $this->upload->initialize($config);
+                
+        //         // Upload file to server
+        //         if ($this->upload->do_upload('file')) {
+        //             // Uploaded file data
+        //             $fileData = $this->upload->data();
+        //             $picFilesData[$i]['file_name'] = $fileData['file_name'];
+        //         } else {
+        //             echo $this->upload->display_errors();
+        //             return;
+        //         }
+        //     }
+        // }
+
+        $cadFilesData = $this->db->get_where('project_files_temp', ['dynamic_id' => $project['dynamic_id'], 'type' => 'cad'])->result();
+
+        foreach ($cadFilesData as $key) {
+            $this->db->insert('project_files', ['project_id' => $last_insert_id, 'type' => 'cad', 'file_name' => $key->file_name, 'user_id' => $project['assign_by']]);
+        }
+
+        $picFilesData = $this->db->get_where('project_files_temp', ['dynamic_id' => $project['dynamic_id'], 'type' => 'pic'])->result();
+        foreach ($picFilesData as $key) {
+            $this->db->insert('project_files', ['project_id' => $last_insert_id, 'type' => 'pic', 'file_name' => $key->file_name, 'user_id' => $project['assign_by']]);
+        }
+
+        //project gem spec
+        // $project_gem_spec = $this->input->post('project_gem_spec');
+        // $project_gem_spec['carats'] = implode('-', $this->input->post('carats'));
+        // $project_gem_spec['cut'] = implode('-', $this->input->post('cut'));
+        // $project_gem_spec['polish'] = implode('-', $this->input->post('polish'));
+        // $project_gem_spec['symmetry'] = implode('-', $this->input->post('symmetry'));
+        // $project_gem_spec['clarity'] = implode('-', $this->input->post('clarity'));
+        // $project_gem_spec['color'] = implode('-', $this->input->post('color'));
+        // $project_gem_spec['length'] = implode('-', $this->input->post('length'));
+        // $project_gem_spec['width'] = implode('-', $this->input->post('width'));
+        // $project_gem_spec['depth'] = implode('-', $this->input->post('depth'));
+        // $project_gem_spec['project_id'] = $last_insert_id;
+
+        // $result = $this->projectmodel->insert_project_gem_spec($project_gem_spec);
+        // if($result === false)
+        //  return "error";
+        $project_msg = $this->input->post('project_msg');
+        $project_msg['project_id'] = $last_insert_id;
+        $project_msg['msg_by'] = $user_id;
+        if ($project_msg['msg'] != '') {
+            $this->projectmodel->insert_project_msg($project_msg);
+        }
+
+
+        $this->session->set_flashdata(['project_insert' => 'success']);
+        redirect('projects/project_details/'.$last_insert_id);
+    }
+
+    public function project_details($id)
+    {
+        $this->login_check();
+
+        $data = $this->project_meta_fileds();
+        $data['project'] = $this->projectmodel->get_project($id);
+        $data['project_details'] = $this->projectmodel->get_project_details($id);
+        $data['project_specification'] = $this->projectmodel->get_project_specification($id);
+        $data['project_msg'] = $this->projectmodel->get_project_msg($id);
+        $data['project_disposition'] = $this->projectmodel->disposition_details($id);
+        $data['project_disposition_internal'] = $this->projectmodel->disposition_details_internal($id);
+        $data['project_files'] = $this->projectmodel->get_project_files($id);
+        $data['project_activity_log'] = $this->projectmodel->get_project_activity_log($id);
+        $data['print_project_details'] = $this->projectmodel->get_print_project_details($id);
+
+        $data['project_dispositions'] = $this->load->view('project_dispositions', $data, true);
+        $data['project_dispositions_internal'] = $this->load->view('project_dispositions_internal', $data, true);
+
+
+        $data['project_description_history'] = $this->db->order_by('created_at', 'DESC')->get_where('project_description_history', ['project_id' => $id])->result();
+
+        $data['project_specification_history'] = $this->db->order_by('created_at', 'DESC')->get_where('project_specification_history', ['project_id' => $id])->result();
+
+        $designation_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id;
+
+        if($designation_id == 1)
+            $this->db->update('project_details', ['seen' => 1], ['project_id' => $id]);
+
+
+        return $this->load->view('project_details', $data);
+    }
+
+    public function update_project($id)
+    {
+        $this->login_check();
+
+        $data = $this->project_meta_fileds();
+        $data['project'] = $this->projectmodel->get_project($id);
+        $data['project_details'] = $this->projectmodel->get_project_details($id);
+        $data['project_specification'] = $this->projectmodel->get_project_specification($id);
+        $data['project_msg'] = $this->projectmodel->get_project_msg($id);
+        return $this->load->view('update_project', $data);
+    }
+
+
+    public function update_project_action($project_id)
+    {
+        $this->login_check();
+
+        $project_details = $this->input->post('project');
+        $this->insert_activity_log($project_id, $project_details);
+
+        $description = $this->db->get_where('project_details', ['project_id' => $project_id])->row()->description;
+
+        if($description != $project_details['description'])
+            $this->db->insert('project_description_history', ['project_id' => $project_id, 'description' => $description]);
+
+        $this->db->update('project_details', $project_details, ['project_id' => $project_id]);
+
+
+
+        $project['project_name'] = $project_details['title'];
+        $project['price'] = $project_details['price'];
+
+        $this->db->update('project', $project, ['project_id' => $project_id]);
+        redirect('projects/project_details/'.$project_id);
+    }
+
+    public function update_project_specification_action($project_id)
+    {
+        $this->login_check();
+
+        $project_specification = $this->input->post('project_specification');
+
+        $designation_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id;
+
+        if(in_array($designation_id, [5,7]))
+            $project_specification['desc_approval'] = 0;
+
+
+        $prev_project_specification = $this->db->get_where('project_specification', ['project_id' => $project_id])->row_array();
+
+        // if()
+
+        foreach ($project_specification as $key => $value) {
+            if($value != $prev_project_specification[$key])
+                $this->db->insert('project_specification_history', ['type' => $key,'project_id' => $project_id, 'value' => $prev_project_specification[$key]]);
+        }
+
+        // print_r($prev_project_specification);die;
+
+        // die;
+
+        $this->insert_specification_activity_log($project_id, $project_specification);
+
+        $this->db->update('project_specification', $project_specification, ['project_id' => $project_id]);
+        redirect('projects/project_details/'.$project_id);
+    }
+
+    public function insert_activity_log($project_id, $project_details)
+    {
+        $this->login_check();
+
+        $activity_type = array_keys($project_details);
+        $project = $this->db->get_where('project_details', ['project_id' => $project_id])->row_array();
+        $user_id = $this->session->userdata('user_id');
+
+
+        foreach ($activity_type as $key) {
+            $activity_type_id = $this->db->get_where('activity_type', ['activity_name' => $key])->row()->activity_type_id;
+            if ($project_details[$key] != $project[$key]) {
+                if ($key != 'deadline') {
+                    $this->db->insert('project_activity_log', ['activity_type' => $activity_type_id, 'project_id' => $project_id, 'user_id' => $user_id]);
+                } elseif ($key == 'deadline' && $project['deadline'] > date('Y-m-d')) {
+                    if ($project_details[$key] != $project[$key]) {
+                        $this->db->insert('project_activity_log', ['activity_type' => $activity_type_id, 'project_id' => $project_id, 'user_id' => $user_id]);
+                    }
+                }
+            }
+        }
+    }
+
+    public function insert_specification_activity_log($project_id, $project_specification)
+    {
+        $this->login_check();
+
+        $activity_type = array_keys($project_specification);
+        $user_id = $this->session->userdata('user_id');
+        $project = $this->db->get_where('project_specification', ['project_id' => $project_id])->row_array();
+
+
+        foreach ($activity_type as $key) {
+            $activity_type_id = $this->db->get_where('activity_type', ['activity_name' => $key])->row()->activity_type_id;
+            if ($project_specification[$key] != $project[$key]) {
+                // echo $activity_type_id;
+                $this->db->insert('project_activity_log', ['activity_type' => $activity_type_id, 'project_id' => $project_id, 'user_id' => $user_id]);
+            }
+        }
+    }
+
+    public function project_meta_fileds()
+    {
+        $data['client_approval'] = $this->client_approval('designation_id');
+        $data['employee'] = $this->projectmodel->get_employee();
+        $data['assignee'] = $this->projectmodel->get_assignee();
+        $data['manager'] = $this->projectmodel->get_manager();
+        $data['client'] = $this->projectmodel->get_client();
+        $data['disposition'] = $this->projectmodel->get_disposition();
+        $data['project_title'] = $this->projectmodel->get_meta_fileds('project', 1);
+        $data['specification_finish'] = explode(',', $this->projectmodel->get_meta_fileds('specification', 2)->value);
+        $data['specification_purity'] = explode(',', $this->projectmodel->get_meta_fileds('specification', 3)->value);
+        $data['specification_ring_size']=explode(',', $this->projectmodel->get_meta_fileds('specification', 4)->value);
+        $data['specification_plating'] = explode(',', $this->projectmodel->get_meta_fileds('specification', 5)->value);
+        $data['permissions'] = $this->member_model->get_all_permissions();
+        
+        return $data;
+    }
+
+    public function client_approval()
+    {
+        $designation_id = $this->db->get_where('user', ['id' => $this->session->userdata('user_id')])->row()->designation_id;
+        if($designation_id == 1)
+            return true;
+        elseif(in_array($designation_id, [5,7]))
+            return false;
+        return false;
+    }
+
+    public function update_project_type($type, $id)
+    {
+        switch ($type) {
+            case 'approve':
+                $this->projectmodel->update_project_type('live', $id);
+                $this->projectmodel->insert_project_tracking_history($this->type_of_change['project_type'], $id, ['project_type' => 'live']);
+                break;
+            case 'reject':
+                $this->projectmodel->update_project_type('cancelled', $id);
+                $this->projectmodel->insert_project_tracking_history($this->type_of_change['project_type'], $id, ['project_type' => 'cancelled']);
+                break;
+            case 'redo':
+                // todo later
+                echo "todo";
+                break;
+        }
+        redirect('Master_controllers');
+    }
+
+    public function insert_msg()
+    {
+        $this->login_check();
+
+        $user_id = $this->session->userdata('user_id');
+        $project_msg['msg'] = $this->input->post('msg');
+        $project_msg['msg_to'] = $this->input->post('msg_to');
+        $project_msg['project_id'] = $this->input->post('project_id');
+        $project_msg['msg_by'] = $this->session->userdata('user_id');
+
+        // print_r($project_msg);die;
+
+        if ($project_msg['msg'] != '') {
+            $this->db->insert('project_activity_log', ['project_id' => $project_msg['project_id'], 'activity_type' => 30, 'user_id' => $user_id]);
+            $this->projectmodel->insert_project_msg($project_msg);
+        }
+
+        $data = $this->projectmodel->get_project_msg($project_msg['project_id']);
+
+        ?>
+        <?php foreach ($data as $key) : ?>
+            <tr>
+                <td><?= $key->msg_by == '' ? '' : $this->db->get_where('user', ['id' => $key->msg_by])->row()->name  ?></td>
+                <td><?= $key->msg_to == 0 || $key->msg_to == NULL ? '' : $this->db->get_where('user', ['id' => $key->msg_to])->row()->name  ?></td>
+                <td><?= $key->msg ?></td>
+                <td><?= $key->reply ?></td>
+                <td><?= $key->created_at ?></td>
+                <td>
+                    <?php if($key->msg_to != 0): ?>
+                        <?php if($key->msg_to == $this->session->userdata('user_id')): ?>
+                        <?php if($key->reply == ''): ?>
+                        <button class="btn reply" value="<?php echo $key->project_msg_id ?>" href="<?php echo base_url('Project_controller/msg_history/'.$key->project_id.'/'.$key->msg_to)?>">Reply</button>
+                        <?php endif; ?>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+    <?php }
+
+    // feb 11 2019
+    public function insert_disposition()
+    {
+        $this->login_check();
+
+        $user_id = $this->session->userdata('user_id');
+        $data['disposition_id']=$this->input->post('disposition');
+        $data['project_id']=$this->input->post('project_id');
+        $data['flag']=0;
+        $project_id=$this->input->post('project_id');
+
+        $disposition_count = $this->db->get_where('project_disposition', ['disposition_id' => $data['disposition_id'], 'project_id' => $data['project_id']])->num_rows();
+
+        if ($disposition_count == 1) {
+            return print_r('false');
+        }
+        
+        $this->projectmodel->insert_disposition($data, $project_id);
+
+        $this->db->insert('project_activity_log',['project_id' => $project_id, 'activity_type' => 12, 'user_id' => $user_id]);
+        
+        $data['project_disposition'] = $this->projectmodel->disposition_details($project_id);
+        $data['client_approval'] = $this->client_approval();
+        $this->load->view('project_dispositions', $data);
+    }
+    public function update_disposition($project_disposition_id)
+    {
+        $this->login_check();
+
+        $user_id = $this->session->userdata('user_id');
+        $result = $this->projectmodel->update_disposition($project_disposition_id);
+        $project_id = $this->db->get_where('project_disposition',['project_disposition_id' => $project_disposition_id])->row()->project_id;
+        $this->db->insert('project_activity_log',['project_id' => $project_id, 'activity_type' => 13, 'user_id' => $user_id]);
+
+        if ($result) :
+            $data['project_disposition'] = $this->projectmodel->disposition_details($result);
+            $data['client_approval'] = $this->client_approval();
+            $this->load->view('project_dispositions', $data);
+        endif;
+    }
+
+    public function revert_disposition($project_disposition_id)
+    {
+        $this->login_check();
+
+        $user_id = $this->session->userdata('user_id');
+        $project_id = $this->db->get_where('project_disposition', ['project_disposition_id' => $project_disposition_id])->row()->project_id;
+        // $disposition = $this->projectmodel->disposition_details($project_id);
+
+        $this->db->insert('project_activity_log',['project_id' => $project_id, 'activity_type' => 14, 'user_id' => $user_id]);
+
+
+        $this->db->query("UPDATE `project_disposition` SET `flag`=0 WHERE project_id= $project_id AND project_disposition_id>= $project_disposition_id");
+
+        $data['project_disposition'] = $this->projectmodel->disposition_details($project_id);
+        $data['client_approval'] = $this->client_approval();
+        $this->load->view('project_dispositions', $data);
+    }
+
+    public function change_disposition()
+    {
+        $this->login_check();
+
+        $user_id = $this->session->userdata('user_id');
+        $project = $this->input->post('project');
+        // echo $project['disposition'];die;
+
+
+        $project_id = $this->db->get_where('project_disposition', ['project_disposition_id' => $project['project_disposition_id']])->row()->project_id;
+
+        $this->db->update('project_disposition', ['disposition_id' => $project['disposition_id']], ['project_disposition_id' => $project['project_disposition_id']]);
+        $this->db->insert('project_activity_log',['project_id' => $project_id, 'activity_type' => 16, 'user_id' => $user_id]);
+
+
+        $this->db->query("UPDATE `project_disposition` SET `flag`=0 WHERE project_id= $project_id AND project_disposition_id>= $project[project_disposition_id]");
+
+        $data['project_disposition'] = $this->projectmodel->disposition_details($project_id);
+        $data['client_approval'] = $this->client_approval();
+        $this->load->view('project_dispositions', $data);
+    }
+
+    public function delete_disposition($project_disposition_id)
+    {
+        $this->login_check();
+
+        $user_id = $this->session->userdata('user_id');
+        $project_id = $this->db->get_where('project_disposition', ['project_disposition_id' => $project_disposition_id])->row()->project_id;
+        $this->db->delete('project_disposition', ['project_disposition_id' => $project_disposition_id]);
+
+        $this->db->insert('project_activity_log',['project_id' => $project_id, 'activity_type' => 15, 'user_id' => $user_id]);
+        $data['project_disposition'] = $this->projectmodel->disposition_details($project_id);
+        $data['client_approval'] = $this->client_approval();
+        $this->load->view('project_dispositions', $data);
+    }
+
+
+    public function front_add_project_action()
+    {
+        $project = $this->input->post('project');
+        $dynamic_id = $this->input->post('dynamic_id');
+        $project_details = $this->input->post('project_details');
+        $project_details['deadline'] = date('Y-m-d', strtotime($project_details['deadline']));
+        $project_details['type'] = 'proposal';
+        $project_specification = $this->input->post('project_specification');
+        $user_email = $this->input->post('user_email');
+
+        if(!$this->input->post('email')){
+            $project['assign_by'] = $this->db->get_where('user', ['email' => $user_email])->row()->id;
+        }
+
+        $project['price'] = $project_details['price'];
+        $project['project_name'] = $project_details['title'];
+        $project['dynamic_id'] = $this->dynamic_id();
+
+        
+        if($this->input->post('email')){
+            //file upload
+            if (count($_FILES['cad']['name']) > 0) {
+                for ($i=0; $i<count($_FILES['cad']['name']); $i++) {
+                    $_FILES['file']['name']     = time().rand(10, 100).'-'.preg_replace('/[^A-Za-z0-9 _ .-]/', '', $_FILES['cad']['name'][$i]);
+                    $_FILES['file']['type']     = $_FILES['cad']['type'][$i];
+                    $_FILES['file']['tmp_name'] = $_FILES['cad']['tmp_name'][$i];
+                    $_FILES['file']['error']     = $_FILES['cad']['error'][$i];
+                    $_FILES['file']['size']     = $_FILES['cad']['size'][$i];
+                    
+                    // File upload configuration
+                    $uploadPath = 'uploads/temp_proj_files/';
+                    $config['upload_path'] = $uploadPath;
+                    $config['allowed_types'] = 'jpg|jpeg|png|pdf|doc|docx|xlxs|xlx|csv|txt|doc|docx|xlxs|xlx|csv|txt';
+                    
+                    // Load and initialize upload library
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    
+                    // Upload file to server
+                    if ($this->upload->do_upload('file')) {
+                        // Uploaded file data
+                        $fileData = $this->upload->data();
+                        $cadFilesData[$i]['file_name'] = $fileData['file_name'];
+                    } else {
+                        echo $this->upload->display_errors();
+                        return;
+                    }
+                }
+            }
+
+
+            if (count($_FILES['pic']['name']) > 0) {
+                for ($i=0; $i<count($_FILES['pic']['name']); $i++) {
+                    $_FILES['file']['name']     = time().rand(10, 100).'-'.preg_replace('/[^A-Za-z0-9 _ .-]/', '', $_FILES['pic']['name'][$i]);
+                    $_FILES['file']['type']     = $_FILES['pic']['type'][$i];
+                    $_FILES['file']['tmp_name'] = $_FILES['pic']['tmp_name'][$i];
+                    $_FILES['file']['error']     = $_FILES['pic']['error'][$i];
+                    $_FILES['file']['size']     = $_FILES['pic']['size'][$i];
+                    
+                    // File upload configuration
+                    $uploadPath = 'uploads/temp_proj_files/';
+                    $config['upload_path'] = $uploadPath;
+                    $config['allowed_types'] = 'jpg|jpeg|png|pdf|doc|docx|xlxs|xlx|csv|txt';
+                    
+                    // Load and initialize upload library
+                    $this->load->library('upload', $config);
+                    $this->upload->initialize($config);
+                    
+                    // Upload file to server
+                    if ($this->upload->do_upload('file')) {
+                        // Uploaded file data
+                        $fileData = $this->upload->data();
+                        $picFilesData[$i]['file_name'] = $fileData['file_name'];
+                    } else {
+                        echo $this->upload->display_errors();
+                        return;
+                    }
+                }
+            }
+
+            ob_start(); ?>
+            
+            <h4>Project added by this email address <?php echo $this->input->post('email') ?></h4>
+
+            <h3>Project details</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <td>Title</td>
+                        <td>Po#</td>
+                        <td>Budget</td>
+                        <td>Due Date</td>
+                        <td>Priority</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><?php echo $project_details['title'] ?></td>
+                        <td><?php echo $project_details['po'] ?></td>
+                        <td><?php echo $project_details['price'] ?></td>
+                        <td><?php echo $project_details['deadline'] ?></td>
+                        <td><?php echo $project_details['priority'] ?></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Project Specification details</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <td>Metal</td>
+                        <td>Finish</td>
+                        <td>Ring Size</td>
+                        <td>Plating</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><?php echo $project_specification['purity'] ?></td>
+                        <td><?php echo $project_specification['finish'] ?></td>
+                        <td><?php echo $project_specification['ring_size'] ?></td>
+                        <td><?php echo $project_specification['plating'] ?></td>
+                    </tr>
+                </tbody>
+            </table>
+            <?php
+
+            $html = ob_get_clean();
+
+            $file = array_merge($picFilesData, $cadFilesData);
+
+            $this->send_add_project_email($html, $file, true);
+
+            echo '
+                    <script>
+                        alert("One job added");
+                        window.location.replace("http://www.castingandcad.com/add-project/");
+                    </script>
+                    ';
+            return;
+
+        } else{
+
+            //file upload
+            // if (count($_FILES['cad']['name']) > 0) {
+            //     for ($i=0; $i<count($_FILES['cad']['name']); $i++) {
+            //         $_FILES['file']['name']     = time().rand(10, 100).'-'.preg_replace('/[^A-Za-z0-9 _ .-]/', '', $_FILES['cad']['name'][$i]);
+            //         $_FILES['file']['type']     = $_FILES['cad']['type'][$i];
+            //         $_FILES['file']['tmp_name'] = $_FILES['cad']['tmp_name'][$i];
+            //         $_FILES['file']['error']     = $_FILES['cad']['error'][$i];
+            //         $_FILES['file']['size']     = $_FILES['cad']['size'][$i];
+                    
+            //         // File upload configuration
+            //         $uploadPath = 'uploads/proj_files/';
+            //         $config['upload_path'] = $uploadPath;
+            //         $config['allowed_types'] = 'jpg|jpeg|png|pdf|doc|docx|xlxs|xlx|csv|txt|doc|docx|xlxs|xlx|csv|txt';
+                    
+            //         // Load and initialize upload library
+            //         $this->load->library('upload', $config);
+            //         $this->upload->initialize($config);
+                    
+            //         // Upload file to server
+            //         if ($this->upload->do_upload('file')) {
+            //             // Uploaded file data
+            //             $fileData = $this->upload->data();
+            //             $cadFilesData[$i]['file_name'] = $fileData['file_name'];
+            //         } else {
+            //             echo $this->upload->display_errors();
+            //             return;
+            //         }
+            //     }
+            // }
+
+
+            // if (count($_FILES['pic']['name']) > 0) {
+            //     for ($i=0; $i<count($_FILES['pic']['name']); $i++) {
+            //         $_FILES['file']['name']     = time().rand(10, 100).'-'.preg_replace('/[^A-Za-z0-9 _ .-]/', '', $_FILES['pic']['name'][$i]);
+            //         $_FILES['file']['type']     = $_FILES['pic']['type'][$i];
+            //         $_FILES['file']['tmp_name'] = $_FILES['pic']['tmp_name'][$i];
+            //         $_FILES['file']['error']     = $_FILES['pic']['error'][$i];
+            //         $_FILES['file']['size']     = $_FILES['pic']['size'][$i];
+                    
+            //         // File upload configuration
+            //         $uploadPath = 'uploads/proj_files/';
+            //         $config['upload_path'] = $uploadPath;
+            //         $config['allowed_types'] = 'jpg|jpeg|png|pdf|doc|docx|xlxs|xlx|csv|txt';
+                    
+            //         // Load and initialize upload library
+            //         $this->load->library('upload', $config);
+            //         $this->upload->initialize($config);
+                    
+            //         // Upload file to server
+            //         if ($this->upload->do_upload('file')) {
+            //             // Uploaded file data
+            //             $fileData = $this->upload->data();
+            //             $picFilesData[$i]['file_name'] = $fileData['file_name'];
+            //         } else {
+            //             echo $this->upload->display_errors();
+            //             return;
+            //         }
+            //     }
+            // }
+
+
+            $this->db->insert('project', $project);
+            $project_details['project_id'] = $this->db->insert_id();
+            $project_specification['project_id'] = $this->db->insert_id();
+            $last_insert_id = $this->db->insert_id();
+
+            $cadFilesData = $this->db->get_where('project_files_temp', ['dynamic_id' => $dynamic_id, 'type' => 'cad'])->result();
+
+            if(count($cadFilesData) > 0){
+                foreach ($cadFilesData as $key) {
+                    $this->db->insert('project_files', ['project_id' => $last_insert_id, 'type' => 'cad', 'file_name' => $key->file_name, 'user_id' => $project['assign_by']]);
+                }
+            }
+
+
+            $picFilesData = $this->db->get_where('project_files_temp', ['dynamic_id' => $dynamic_id, 'type' => 'pic'])->result();
+            if(count($picFilesData) > 0){
+                foreach ($picFilesData as $key) {
+                    $this->db->insert('project_files', ['project_id' => $last_insert_id, 'type' => 'pic', 'file_name' => $key->file_name, 'user_id' => $project['assign_by']]);
+                }
+            }
+
+            $this->db->insert('project_details', $project_details);
+            $this->db->insert('project_specification', $project_specification);
+
+            $project = $this->projectmodel->get_project($last_insert_id);
+            $project_details = $this->projectmodel->get_project_details($last_insert_id);
+            $project_specification = $this->projectmodel->get_project_specification($last_insert_id);
+            $project_files = $this->projectmodel->get_project_files($last_insert_id);
+
+
+            ob_start(); ?>
+            
+
+            <h3>Project details</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <td>Title</td>
+                        <td>Po#</td>
+                        <td>Budget</td>
+                        <td>Due Date</td>
+                        <td>Priority</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><?php echo $project_details->title ?></td>
+                        <td><?php echo $project_details->po ?></td>
+                        <td><?php echo $project_details->price ?></td>
+                        <td><?php echo $project_details->deadline ?></td>
+                        <td><?php echo $project_details->priority ?></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Project Specification details</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <td>Metal</td>
+                        <td>Finish</td>
+                        <td>Ring Size</td>
+                        <td>Plating</td>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><?php echo $project_specification->purity ?></td>
+                        <td><?php echo $project_specification->finish ?></td>
+                        <td><?php echo $project_specification->ring_size ?></td>
+                        <td><?php echo $project_specification->plating ?></td>
+                    </tr>
+                </tbody>
+            </table>
+            <?php
+
+            $html = ob_get_clean();
+
+            $this->send_add_project_email($html, $project_files);
+
+            echo '
+    				<script>
+    					alert("One job added");
+    					window.location.replace("http://www.castingandcad.com/add-project/");
+    				</script>
+    				';
+            return;
+
+        }
+
+    }
+
+    public function send_add_project_email($message, $project_files, $new_proj = false)
+    {
+        
+        // $email = 'sjgalaxy98@gmail.com';
+        // $email = 'maulik@hih7.com';
+        $email = ['oscar@valenciadiamonds.com', 'Lily@valenciadiamonds.com', 'jasmine@valenciadiamonds.com'];
+     
+        $config = array(
+            'protocol' => 'smtp',
+            'smtp_host' => 'ses-smtp-user',
+            'smtp_port' => 465,
+            'smtp_user' => '20190429-113906,AKIA5VUTQDVI4ZD3Z4VC',
+            'smtp_pass' => 'BI6wKETcip4mq0It8Z0KP8I5jQeXDZexGSJyJOys0QUj',
+            'mailtype' => 'html',
+            'charset' => 'iso-8859-1',
+        );
+        $this->load->library('email', $config);
+
+        // $this->load->library('email');
+        $this->email->set_newline("\r\n");
+        $this->email->set_mailtype("html");
+        $this->email->from('support@hih7.org', 'Mastercasting'); // change it to yours
+        $this->email->to($email); // change it to yours
+        $this->email->subject("New Project Added");
+        $this->email->message($message);
+
+        if(!$new_proj){
+            foreach ($project_files as $key) {
+                $this->email->attach('http://www.castingandcad.com/mastercasting_backend/uploads/proj_files/'. $key->file_name);
+            }
+        } else{
+            foreach ($project_files as $key) {
+                $this->email->attach('http://www.castingandcad.com/mastercasting_backend/uploads/temp_proj_files/'. $key['file_name']);
+            }
+        }
+        $this->email->send();
+    }
+
+
+    public function upload_proj_files($userfile)
+    {
+        $config['upload_path']          = './uploads/proj_files';
+        $config['allowed_types']        = 'gif|jpg|png|pdf';
+        $new_name = time().'-'.preg_replace('/[^A-Za-z0-9 _ .-]/', '', $_FILES[$userfile]['name']);
+        $config['file_name'] = $new_name;
+
+        $this->load->library('upload', $config);
+
+        if (! $this->upload->do_upload($userfile)) {
+            return $error = array('error' => $this->upload->display_errors());
+        } else {
+            return $this->upload->data();
+        }
+    }
+
+
+      // internal disposition
+    public function insert_disposition_internal()
+    {
+        $this->login_check();
+
+        $data['disposition_id']=$this->input->post('disposition');
+        $data['project_id']=$this->input->post('project_id');
+        $data['flag']=0;
+        $project_id=$this->input->post('project_id');
+
+        $disposition_count = $this->db->get_where('project_disposition_internal', ['disposition_id' => $data['disposition_id'], 'project_id' => $data['project_id']])->num_rows();
+
+        if ($disposition_count == 1) {
+            return print_r('false');
+        }
+
+        $this->projectmodel->insert_disposition_internal($data, $project_id);
+        
+        $data['project_disposition_internal'] = $this->projectmodel->disposition_details_internal($project_id);
+        $data['client_approval'] = $this->client_approval();
+        $this->load->view('project_dispositions_internal', $data);
+    }
+
+    public function delete_disposition_internal($project_disposition_id)
+    {
+        $this->login_check();
+
+        $project_id = $this->db->get_where('project_disposition_internal', ['project_disposition_id' => $project_disposition_id])->row()->project_id;
+        $this->db->delete('project_disposition_internal', ['project_disposition_id' => $project_disposition_id]);
+        $data['project_disposition_internal'] = $this->projectmodel->disposition_details_internal($project_id);
+        $data['client_approval'] = $this->client_approval();
+        $this->load->view('project_dispositions_internal', $data);
+    }
+
+    public function update_disposition_internal($project_disposition_id)
+    {
+        $this->login_check();
+
+        $result = $this->projectmodel->update_disposition_internal($project_disposition_id);
+        if ($result) :
+            $data['project_disposition_internal'] = $this->projectmodel->disposition_details_internal($result);
+            $data['client_approval'] = $this->client_approval();
+            $this->load->view('project_dispositions_internal', $data);
+        endif;
+    }
+
+    public function change_disposition_internal()
+    {
+        $this->login_check();
+
+        $project = $this->input->post('project');
+        // print_r($project);die;
+        // echo $project['disposition'];die;
+
+
+        $project_id = $this->db->get_where('project_disposition_internal', ['project_disposition_id' => $project['project_disposition_id']])->row()->project_id;
+
+        $this->db->update('project_disposition_internal', ['disposition_id' => $project['disposition_id']], ['project_disposition_id' => $project['project_disposition_id']]);
+
+        $this->db->query("UPDATE `project_disposition_internal` SET `flag`=0 WHERE project_id= $project_id AND project_disposition_id>= $project[project_disposition_id]");
+
+        $data['project_disposition_internal'] = $this->projectmodel->disposition_details($project_id);
+        $data['client_approval'] = $this->client_approval();
+        $this->load->view('project_dispositions_internal', $data);
+    }
+
+    public function revert_disposition_internal($project_disposition_id)
+    {
+        $this->login_check();
+
+        $project_id = $this->db->get_where('project_disposition_internal', ['project_disposition_id' => $project_disposition_id])->row()->project_id;
+        // $disposition = $this->projectmodel->disposition_details($project_id);
+
+        $this->db->query("UPDATE `project_disposition_internal` SET `flag`=0 WHERE project_id= $project_id AND project_disposition_id>= $project_disposition_id");
+
+        $data['project_disposition_internal'] = $this->projectmodel->disposition_details_internal($project_id);
+        $data['client_approval'] = $this->client_approval();
+        $this->load->view('project_dispositions_internal', $data);
+    }
+
+    public function add_project_files()
+    {
+        $project_id = $this->input->post('project_id');
+        $user_id = $this->session->userdata('user_id');
+
+        $data = $this->do_upload('file');
+
+        if (isset($data['error'])) {
+            return print_r(strip_tags($data['error']));
+        }
+
+        $this->db->insert('project_files', ['file_name' => $data['file_name'], 'project_id' => $project_id, 'user_id' => $user_id, 'type' => 'pic']);
+        return print(6);
+    }
+
+    public function edit_project_files()
+    {
+        $Imageid = $this->input->post('project_files_id');
+        $file_name = $this->db->get_where('project_files', ['project_files_id' => $Imageid])->row()->file_name;
+
+        $data = $this->do_upload('file');
+
+        if (isset($data['error'])) {
+            return print_r(strip_tags($data['error']));
+        }
+
+        $this->db->update('project_files', ['file_name' => $data['file_name']], ['project_files_id' => $Imageid]);
+        unlink("uploads/proj_files/".$file_name);
+        return print(1);
+    }
+
+    public function delete_project_files($Imageid)
+    {
+        $file_name = $this->db->get_where('project_files', ['project_files_id' => $Imageid])->row()->file_name;
+        unlink("uploads/proj_files/".$file_name);
+        $this->db->delete('project_files', ['project_files_id' => $Imageid]);
+    }
+
+    public function do_upload($userfile)
+    {
+        $config['upload_path']          = './uploads/proj_files/';
+        $config['allowed_types']        = 'gif|jpg|png';
+        $config['file_name']            = time().'_'.preg_replace('/\s+/', '', $_FILES[$userfile]['name']);
+
+        $this->load->library('upload', $config);
+
+        if (! $this->upload->do_upload($userfile)) {
+            return array('error' => $this->upload->display_errors());
+        } else {
+            return $this->upload->data();
+        }
+    }
+
+    public function print_project_details()
+    {
+        $this->login_check();
+
+        $project = $this->input->post('project');
+
+        $count = $this->db->get_where('print_project_details', ['project_id' => $project['project_id']])->num_rows();
+
+        if ($count == 0) {
+            $this->db->insert('print_project_details', $project);
+        } else {
+            $this->db->update('print_project_details', $project, ['project_id' => $project['project_id']]);
+        }
+
+
+        $data['print_project_details'] = $this->db->get_where('print_project_details', ['project_id' => $project['project_id']])->row();
+        $data['project'] = $this->db->get_where('project', ['project_id' => $project['project_id']])->row();
+        $data['project_details'] = $this->db->get_where('project_details', ['project_id' => $project['project_id']])->row();
+        $data['project_specification'] = $this->db->get_where('project_specification', ['project_id' => $project['project_id']])->row();
+        $data['project_files'] = $this->db->get_where('project_files', ['project_id' => $project['project_id'], 'thumbnail' => 1])->result();
+
+        if(count($data['project_files']) == 0){
+            $data['project_files'] = $this->db->get_where('project_files', ['project_id' => $project['project_id']])->result();
+        }
+
+        // print_r($data['project_details']);die;
+        // echo  $_SERVER["DOCUMENT_ROOT"];die;
+        $this->load->view('print_project', $data);
+        $html = $this->output->get_output();
+        $this->pdf->loadHtml(html_entity_decode($html));
+        $this->pdf->setPaper('A4', 'landscape');
+        $this->pdf->render();
+        $this->pdf->stream("Report", array("Attachment" => false));
+    }
+
+
+    public function update_print_project_details()
+    {
+        $this->login_check();
+
+        $project = $this->input->post('project');
+
+
+        $count = $this->db->get_where('print_project_details', ['project_id' => $project['project_id']])->num_rows();
+
+        if ($count == 0) {
+            $this->db->insert('print_project_details', $project);
+        } else {
+            $this->insert_print_deatils_activity_log($project);
+            $this->db->update('print_project_details', $project, ['project_id' => $project['project_id']]);
+        }
+
+    }
+
+    public function insert_print_deatils_activity_log($project)
+    {
+
+        $print_project_details = $this->db->get_where('print_project_details', ['project_id' => $project['project_id']])->row_array();
+        $user_id = $this->session->userdata('user_id');
+
+        $activity_type = array_keys($project);
+
+        foreach ($activity_type as $key) {
+            if($key != 'project_id'){
+                $activity_type_id = $this->db->get_where('activity_type', ['activity_name' => 'print_details_'.$key])->row()->activity_name;
+                if ($print_project_details[$key] != $project[$key]) {
+                    if( $key == 'deadline' && $project[$key] != ''){
+                        $this->db->insert('project_activity_log', ['activity_type' => $activity_type_id, 'user_id' => $user_id, 'project_id' => $project['project_id']]);
+                    } 
+                    if($key != 'deadline') {
+                        $this->db->insert('project_activity_log', ['activity_type' => $activity_type_id, 'user_id' => $user_id, 'project_id' => $project['project_id']]);
+                    }
+                }
+
+            }
+        }
+    }
+
+    public function jump_to_project($key = null)
+    {
+        // $project = $this->db->or_like(array('project_name' => $key, 'project_id' => $key))->get('project')->result();
+        $user_id = $this->session->userdata('user_id');
+        $designation_id = $this->db->get_where('user', ['id' => $user_id])->row()->designation_id;
+        if ($designation_id == 1) {
+            $project = $this->db->query("SELECT DISTINCT `project`.`project_id`, `project`.`project_name` FROM `project` JOIN `user` WHERE `project`.`project_name` LIKE '%$key%' OR `project`.`project_id` LIKE '%$key%' OR `user`.`name` LIKE '%$key%' OR `project`.`dynamic_id` LIKE '%$key%'")->result();
+        } else{
+            $project = $this->db->query("SELECT DISTINCT `project`.`project_id`, `project`.`project_name` FROM `project` JOIN `user` WHERE (`project`.`assign_by` = $user_id OR `project`.`asign_user` = $user_id) AND (`project`.`project_name` LIKE '%$key%' OR `project`.`project_id` LIKE '%$key%' OR `user`.`name` LIKE '%$key%')")->result();
+        }
+
+
+        // echo $this->db->last_query();
+        // echo "SELECT * FROM `project` JOIN `user` ON `project`.`asign_user` = `user`.`id` WHERE `project`.`project_name` LIKE '%$key%' OR `project`.`project_id` LIKE '%$key%' OR `user`.`name` LIKE '%$key%'";
+
+        echo json_encode($project);
+    }
+
+
+    public function print_job_label($project_id)
+    {
+        $this->login_check();
+
+        $project = $this->db->get_where('project', ['project_id' => $project_id])->row();
+        $project_details = $this->db->get_where('project_details', ['project_id' => $project_id])->row();
+        ob_start(); ?>
+        <p>Job: <?php echo $project->project_id ?>
+        <br> Created At: <?php echo $project_details->created_at ?> 
+        <br> Deadline: <?php echo $project_details->deadline ?>
+        </p>
+        <?php
+        $html = ob_get_clean();
+        $customPaper = array(0,0,360,150);
+        $this->pdf->loadHtml(html_entity_decode($html));
+        $this->pdf->set_paper($customPaper);
+        $this->pdf->render();
+        $this->pdf->stream("Print Job Label", array("Attachment" => false));
+    }
+
+
+    public function dynamic_id()
+    {
+        $digits = 4;
+        $project = $this->db->get('project')->result();
+
+        if(count($project) == 0){
+            return rand(1000,10000);
+        }
+
+        $check = false;
+
+        while (!$check) {
+            $dynamic_id = rand(pow(10, $digits-1), pow(10, $digits)-1);
+            foreach ($project as $key) {
+                if ($dynamic_id != $key->dynamic_id) {
+                    $check = true;
+                }
+            }
+        }
+
+        return $dynamic_id;
+    }
+
+
+    public function all()
+    {
+        if ($this->client_approval()) {
+            echo $data['projects'] = $this->projectmodel->get_all_projects(true);
+        } else {
+            echo $data['projects'] = $this->projectmodel->get_all_projects();
+        }
+
+        print_r($data['projects']);
+        die;
+        // $this->load->view('all_projects', $data);
+    }
+
+
+    public function file_action($project_id){
+        $project_files_id = $this->input->post('project_files_id');
+        $action = $this->input->post('action');
+        $project_files = $this->db->get_where('project_files', ['project_id' => $project_id])->result();
+
+        if(count($project_files_id) == 0){
+            return redirect('projects/project_details/'.$project_id);
+        }
+
+        if($action == 'thumbnail'){
+
+            foreach ($project_files as $key) {
+                $this->db->update('project_files', ['thumbnail' => 0], ['project_files_id' => $key->project_files_id]);
+            }
+            $this->db->update('project_files', ['thumbnail' => 1], ['project_files_id' => $project_files_id[0]]);
+
+        } elseif($action == 'client_visible'){
+            foreach ($project_files_id as $key) {
+                $this->db->update('project_files', ['client_approval' => 1], ['project_files_id' => $key]);
+            }
+        } elseif($action == 'client_invisible'){
+            foreach ($project_files_id as $key) {
+                $this->db->update('project_files', ['client_approval' => 0], ['project_files_id' => $key]);
+            }
+        } elseif($action == 'delete'){
+            foreach ($project_files_id as $key) {
+                $file_name = $this->db->get_where('project_files', ['project_files_id' => $key])->row()->file_name;
+                unlink('uploads/proj_files/'.$file_name);
+                $this->db->delete('project_files', ['project_files_id' => $key]);
+            }
+        }
+        return redirect('projects/project_details/'.$project_id);
+    }
+
+    public function krajee(){
+        $this->load->view('krajee');
+    }
+
+    public function krajee_upload($project_id, $type = 'pic') {
+        // print_r($_FILES['file']);die;
+
+        if($type == 'undefined')
+            $type = 'pic';
+
+        $user_id = $this->session->userdata('user_id');
+
+        if (isset($data['error'])) {
+            return print_r(strip_tags($data['error']));
+        }
+
+
+        $preview = [];
+        $config = [];
+        $errors = [];
+        $input = 'file'; // the input name for the fileinput plugin
+        if (empty($_FILES[$input])) {
+            return [];
+        }
+        
+        $total = count($_FILES[$input]['name']); // multiple files
+        $path = 'uploads/proj_files/'; // your upload path
+        for ($i = 0; $i < $total; $i++) {
+            $tmpFilePath = $_FILES[$input]['tmp_name'][$i]; // the temp file path
+            $fileName = time().'_'.preg_replace('/\s+/', '', $_FILES[$input]['name'][$i]); // the file name
+            $fileSize = $_FILES[$input]['size'][$i]; // the file size
+            
+            //Make sure we have a file path
+            if ($tmpFilePath != ""){
+                //Setup our new file path
+                $newFilePath = $path . $fileName;
+                $newFileUrl = base_url('uploads/proj_files/') . $fileName;
+                
+                //Upload the file into the new path
+                if(move_uploaded_file($tmpFilePath, $newFilePath)) {
+                    $this->db->insert('project_files', ['file_name' => $fileName, 'project_id' => $project_id, 'user_id' => $user_id, 'type' => $type]);
+
+                    $project_files_id = $this->db->insert_id();
+                    $fileId = $fileName . $i; // some unique key to identify the file
+                    $preview[] = $newFileUrl;
+                    $config[] = [
+                        'key' => $fileId,
+                        'caption' => $fileName,
+                        'size' => $fileSize,
+                        'downloadUrl' => $newFileUrl, // the url to download the file
+                        'url' => base_url('Project_controller/delete_krajee_img/'.$project_files_id), // server api to delete the file based on key
+                    ];
+
+                } else {
+                    $errors[] = $fileName;
+                }
+            } else {
+                $errors[] = $fileName;
+            }
+        }
+        $out = ['initialPreview' => $preview, 'initialPreviewConfig' => $config, 'initialPreviewAsData' => true];
+        if (!empty($errors)) {
+            $img = count($errors) === 1 ? 'file "' . $error[0]  . '" ' : 'files: "' . implode('", "', $errors) . '" ';
+            $out['error'] = 'Oh snap! We could not upload the ' . $img . 'now. Please try again later.';
+        }
+
+        $this->db->insert('project_activity_log', ['activity_type' => 31, 'project_id' => $project_id, 'user_id' => $user_id]);
+
+        echo json_encode($out);
+    }
+
+    public function delete_krajee_img($project_files_id='')
+    {
+        $user_id = $this->session->userdata('user_id');
+        $file_name = $this->db->get_where('project_files', ['project_files_id' => $project_files_id])->row()->file_name;
+        $project_id = $this->db->get_where('project_files', ['project_files_id' => $project_files_id])->row()->project_id;
+        $this->db->delete('project_files', ['project_files_id' => $project_files_id]);
+        unlink('uploads/proj_files/'.$file_name);
+        $this->db->insert('project_activity_log', ['activity_type' => 33, 'project_id' => $project_id,  'user_id' => $user_id]);
+        echo json_encode("Done");
+    }
+
+
+    public function project_description($id){
+        $data['project_description'] = $this->db->get_where('project_description_history', ['project_description_history_id' => $id])->row();
+        $this->load->view('project_description', $data);
+    }
+
+
+    public function krajee_cad_upload($dynamic_id) {
+        // echo $dynamic_i;die;
+        // print_r($_FILES['file']);die;
+
+        $user_id = $this->session->userdata('user_id');
+
+        if (isset($data['error'])) {
+            return print_r(strip_tags($data['error']));
+        }
+
+
+        $preview = [];
+        $config = [];
+        $errors = [];
+        $input = 'file'; // the input name for the fileinput plugin
+        if (empty($_FILES[$input])) {
+            return [];
+        }
+        
+        $total = count($_FILES[$input]['name']); // multiple files
+        $path = 'uploads/proj_files/'; // your upload path
+        for ($i = 0; $i < $total; $i++) {
+            $tmpFilePath = $_FILES[$input]['tmp_name'][$i]; // the temp file path
+            $fileName = time().'_'.preg_replace('/\s+/', '', $_FILES[$input]['name'][$i]); // the file name
+            $fileSize = $_FILES[$input]['size'][$i]; // the file size
+            
+            //Make sure we have a file path
+            if ($tmpFilePath != ""){
+                //Setup our new file path
+                $newFilePath = $path . $fileName;
+                $newFileUrl = base_url('uploads/proj_files/') . $fileName;
+                
+                //Upload the file into the new path
+                if(move_uploaded_file($tmpFilePath, $newFilePath)) {
+                    $this->db->insert('project_files_temp', ['file_name' => $fileName, 'dynamic_id' => $dynamic_id, 'user_id' => $user_id, 'type' => 'cad']);
+
+                    $project_files_id = $this->db->insert_id();
+                    $fileId = $fileName . $i; // some unique key to identify the file
+                    $preview[] = $newFileUrl;
+                    $config[] = [
+                        'key' => $fileId,
+                        'caption' => $fileName,
+                        'size' => $fileSize,
+                        'downloadUrl' => $newFileUrl, // the url to download the file
+                        'url' => base_url('Project_controller/delete_krajee_cad_img/'.$project_files_id), // server api to delete the file based on key
+                    ];
+
+                } else {
+                    $errors[] = $fileName;
+                }
+            } else {
+                $errors[] = $fileName;
+            }
+        }
+        $out = ['initialPreview' => $preview, 'initialPreviewConfig' => $config, 'initialPreviewAsData' => true];
+        if (!empty($errors)) {
+            $img = count($errors) === 1 ? 'file "' . $error[0]  . '" ' : 'files: "' . implode('", "', $errors) . '" ';
+            $out['error'] = 'Oh snap! We could not upload the ' . $img . 'now. Please try again later.';
+        }
+
+
+        echo json_encode($out);
+    }
+
+    public function krajee_pic_upload($dynamic_id) {
+        // echo $dynamic_i;die;
+        // print_r($_FILES['file']);die;
+
+        $user_id = $this->session->userdata('user_id');
+
+        if (isset($data['error'])) {
+            return print_r(strip_tags($data['error']));
+        }
+
+
+        $preview = [];
+        $config = [];
+        $errors = [];
+        $input = 'file'; // the input name for the fileinput plugin
+        if (empty($_FILES[$input])) {
+            return [];
+        }
+        
+        $total = count($_FILES[$input]['name']); // multiple files
+        $path = 'uploads/proj_files/'; // your upload path
+        for ($i = 0; $i < $total; $i++) {
+            $tmpFilePath = $_FILES[$input]['tmp_name'][$i]; // the temp file path
+            $fileName = time().'_'.preg_replace('/\s+/', '', $_FILES[$input]['name'][$i]); // the file name
+            $fileSize = $_FILES[$input]['size'][$i]; // the file size
+            
+            //Make sure we have a file path
+            if ($tmpFilePath != ""){
+                //Setup our new file path
+                $newFilePath = $path . $fileName;
+                $newFileUrl = base_url('uploads/proj_files/') . $fileName;
+                
+                //Upload the file into the new path
+                if(move_uploaded_file($tmpFilePath, $newFilePath)) {
+                    $this->db->insert('project_files_temp', ['file_name' => $fileName, 'dynamic_id' => $dynamic_id, 'user_id' => $user_id, 'type' => 'pic']);
+
+                    $project_files_id = $this->db->insert_id();
+                    $fileId = $fileName . $i; // some unique key to identify the file
+                    $preview[] = $newFileUrl;
+                    $config[] = [
+                        'key' => $fileId,
+                        'caption' => $fileName,
+                        'size' => $fileSize,
+                        'downloadUrl' => $newFileUrl, // the url to download the file
+                        'url' => base_url('Project_controller/delete_krajee_pic_img/'.$project_files_id), // server api to delete the file based on key
+                    ];
+
+                } else {
+                    $errors[] = $fileName;
+                }
+            } else {
+                $errors[] = $fileName;
+            }
+        }
+        $out = ['initialPreview' => $preview, 'initialPreviewConfig' => $config, 'initialPreviewAsData' => true];
+        if (!empty($errors)) {
+            $img = count($errors) === 1 ? 'file "' . $error[0]  . '" ' : 'files: "' . implode('", "', $errors) . '" ';
+            $out['error'] = 'Oh snap! We could not upload the ' . $img . 'now. Please try again later.';
+        }
+
+
+        echo json_encode($out);
+    }
+
+    public function delete_krajee_cad_img($project_files_temp_id='')
+    {
+        $file_name = $this->db->get_where('project_files_temp', ['project_files_temp_id' => $project_files_temp_id])->row()->file_name;
+        $this->db->delete('project_files_temp', ['project_files_temp_id' => $project_files_temp_id]);
+        unlink('uploads/proj_files/'.$file_name);
+        echo json_encode("Done");
+    }
+
+    public function delete_krajee_pic_img($project_files_temp_id='')
+    {
+        $file_name = $this->db->get_where('project_files_temp', ['project_files_temp_id' => $project_files_temp_id])->row()->file_name;
+        $this->db->delete('project_files_temp', ['project_files_temp_id' => $project_files_temp_id]);
+        unlink('uploads/proj_files/'.$file_name);
+        echo json_encode("Done");
+    }
+
+
+    public function approve_desc($project_id){
+        $this->db->update('project_details', ['desc_approval' => 1], ['project_id' => $project_id]);
+        $this->db->update('project_description_history', ['seen' => 1], ['project_id' => $project_id]);
+        redirect('Master_controllers/dashboard');
+
+    }
+
+    public function insert_reply(){
+        $reply = $this->input->post('msg');
+        $project_msg_id = $this->input->post('project_msg_id');
+        $project_id = $this->input->post('project_id');
+        $this->db->update('project_msg', ['reply' => $reply], ['project_msg_id' => $project_msg_id]);
+        $data = $this->projectmodel->get_project_msg($project_id);
+
+        ?>
+        <?php foreach ($data as $key) : ?>
+            <tr>
+                <td><?= $key->msg_by == '' ? '' : $this->db->get_where('user', ['id' => $key->msg_by])->row()->name  ?></td>
+                <td><?= $key->msg_to == 0 || $key->msg_to == NULL ? '' : $this->db->get_where('user', ['id' => $key->msg_to])->row()->name  ?></td>
+                <td><?= $key->msg ?></td>
+                <td><?= $key->reply ?></td>
+                <td><?= $key->created_at ?></td>
+                <td>
+                    <?php if($key->msg_to != 0): ?>
+                        <?php if($key->msg_to == $this->session->userdata('user_id')): ?>
+                        <?php if($key->reply == ''): ?>
+                        <button class="btn reply" value="<?php echo $key->project_msg_id ?>" href="<?php echo base_url('Project_controller/msg_history/'.$key->project_id.'/'.$key->msg_to)?>">Reply</button>
+                        <?php endif; ?>
+                        <?php endif; ?>
+                    <?php endif; ?>
+                </td>
+            </tr>
+        <?php endforeach; ?>
+
+        <?php 
+    }
+
+
+    public function front_krajee_cad_upload($dynamic_id, $user_email = NULL) {
+        // echo $dynamic_i;die;
+        // print_r($_FILES['file']);die;
+
+        $user_id = $this->db->get_where('user', ['email' => $user_email])->row()->id;
+
+        if (isset($data['error'])) {
+            return print_r(strip_tags($data['error']));
+        }
+
+
+        $preview = [];
+        $config = [];
+        $errors = [];
+        $input = 'file'; // the input name for the fileinput plugin
+        if (empty($_FILES[$input])) {
+            return [];
+        }
+        
+        $total = count($_FILES[$input]['name']); // multiple files
+        $path = 'uploads/proj_files/'; // your upload path
+        for ($i = 0; $i < $total; $i++) {
+            $tmpFilePath = $_FILES[$input]['tmp_name'][$i]; // the temp file path
+            $fileName = time().'_'.preg_replace('/\s+/', '', $_FILES[$input]['name'][$i]); // the file name
+            $fileSize = $_FILES[$input]['size'][$i]; // the file size
+            
+            //Make sure we have a file path
+            if ($tmpFilePath != ""){
+                //Setup our new file path
+                $newFilePath = $path . $fileName;
+                $newFileUrl = base_url('uploads/proj_files/') . $fileName;
+                
+                //Upload the file into the new path
+                if(move_uploaded_file($tmpFilePath, $newFilePath)) {
+                    $this->db->insert('project_files_temp', ['file_name' => $fileName, 'dynamic_id' => $dynamic_id, 'user_id' => $user_id, 'type' => 'cad']);
+
+                    $project_files_id = $this->db->insert_id();
+                    $fileId = $fileName . $i; // some unique key to identify the file
+                    $preview[] = $newFileUrl;
+                    $config[] = [
+                        'key' => $fileId,
+                        'caption' => $fileName,
+                        'size' => $fileSize,
+                        'downloadUrl' => $newFileUrl, // the url to download the file
+                        'url' => base_url('Project_controller/delete_krajee_cad_img/'.$project_files_id), // server api to delete the file based on key
+                    ];
+
+                } else {
+                    $errors[] = $fileName;
+                }
+            } else {
+                $errors[] = $fileName;
+            }
+        }
+        $out = ['initialPreview' => $preview, 'initialPreviewConfig' => $config, 'initialPreviewAsData' => true];
+        if (!empty($errors)) {
+            $img = count($errors) === 1 ? 'file "' . $error[0]  . '" ' : 'files: "' . implode('", "', $errors) . '" ';
+            $out['error'] = 'Oh snap! We could not upload the ' . $img . 'now. Please try again later.';
+        }
+
+
+        echo json_encode($out);
+    }
+
+
+    public function front_krajee_pic_upload($dynamic_id, $user_email = NULL) {
+        // echo $dynamic_i;die;
+        // print_r($_FILES['file']);die;
+
+        $user_id = $this->db->get_where('user', ['email' => $user_email])->row()->id;
+
+        if (isset($data['error'])) {
+            return print_r(strip_tags($data['error']));
+        }
+
+
+        $preview = [];
+        $config = [];
+        $errors = [];
+        $input = 'file'; // the input name for the fileinput plugin
+        if (empty($_FILES[$input])) {
+            return [];
+        }
+        
+        $total = count($_FILES[$input]['name']); // multiple files
+        $path = 'uploads/proj_files/'; // your upload path
+        for ($i = 0; $i < $total; $i++) {
+            $tmpFilePath = $_FILES[$input]['tmp_name'][$i]; // the temp file path
+            $fileName = time().'_'.preg_replace('/\s+/', '', $_FILES[$input]['name'][$i]); // the file name
+            $fileSize = $_FILES[$input]['size'][$i]; // the file size
+            
+            //Make sure we have a file path
+            if ($tmpFilePath != ""){
+                //Setup our new file path
+                $newFilePath = $path . $fileName;
+                $newFileUrl = base_url('uploads/proj_files/') . $fileName;
+                
+                //Upload the file into the new path
+                if(move_uploaded_file($tmpFilePath, $newFilePath)) {
+                    $this->db->insert('project_files_temp', ['file_name' => $fileName, 'dynamic_id' => $dynamic_id, 'user_id' => $user_id, 'type' => 'pic']);
+
+                    $project_files_id = $this->db->insert_id();
+                    $fileId = $fileName . $i; // some unique key to identify the file
+                    $preview[] = $newFileUrl;
+                    $config[] = [
+                        'key' => $fileId,
+                        'caption' => $fileName,
+                        'size' => $fileSize,
+                        'downloadUrl' => $newFileUrl, // the url to download the file
+                        'url' => base_url('Project_controller/delete_krajee_pic_img/'.$project_files_id), // server api to delete the file based on key
+                    ];
+
+                } else {
+                    $errors[] = $fileName;
+                }
+            } else {
+                $errors[] = $fileName;
+            }
+        }
+        $out = ['initialPreview' => $preview, 'initialPreviewConfig' => $config, 'initialPreviewAsData' => true];
+        if (!empty($errors)) {
+            $img = count($errors) === 1 ? 'file "' . $error[0]  . '" ' : 'files: "' . implode('", "', $errors) . '" ';
+            $out['error'] = 'Oh snap! We could not upload the ' . $img . 'now. Please try again later.';
+        }
+
+
+        echo json_encode($out);
+    }
+}

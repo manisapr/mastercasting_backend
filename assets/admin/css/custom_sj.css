@@ -1,0 +1,34 @@
+.page-header.navbar .page-logo .logo-default {
+    margin-top: 4px !important;
+}
+
+.dataTables_wrapper .dataTables_filter {
+    text-align: right;
+}
+
+.dataTables_wrapper .dataTables_paginate {
+    text-align: right;
+}
+
+#dashboard-content .portlet-body {
+    overflow: scroll;
+}
+
+/*#dashboard-content .portlet-body:hover {
+    overflow-y: scroll;
+}*/
+
+.portlet-body::-webkit-scrollbar {
+    width: 8px !important;
+    /*color:*/
+    /* remove scrollbar space */
+    background: transparent !important;
+    /* optional: just make scrollbar invisible */
+}
+
+/* optional: show position indicator in red */
+
+.portlet-body::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    background: #BABABA !important;
+}
